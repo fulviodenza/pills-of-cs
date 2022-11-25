@@ -13,6 +13,8 @@ import (
 	"github.com/jomei/notionapi"
 )
 
+const PAGE_ID = "48b530629463419ca92e22cc6ef50dab"
+
 type Bot struct {
 	TelegramToken string
 	Cfg           cfg.BotConfigs
@@ -44,7 +46,7 @@ func NewBotWithConfig() (*Bot, error) {
 		return nil, err
 	}
 
-	notion_client := notionapi.NewClient("secret_cHeqVXYXaRURTy8PJiLn81PL4G27Mxnm5hYA0BtWvyD")
+	notion_client := notionapi.NewClient(notionapi.Token(os.Getenv("NOTION_TOKEN")))
 
 	return &Bot{
 		TelegramToken: token,
@@ -72,7 +74,7 @@ func (b *Bot) handleMessage(up *objects.Update) {
 			return
 		}
 	case up.Message.Text == "/pill":
-		page, err := b.NotionClient.Page.Get(context.Background(), "48b530629463419ca92e22cc6ef50dab")
+		page, err := b.NotionClient.Page.Get(context.Background(), PAGE_ID)
 		if err != nil {
 			fmt.Println(page)
 		}
