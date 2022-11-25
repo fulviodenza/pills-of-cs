@@ -3,6 +3,8 @@ package main
 import (
 	"log"
 	"os"
+
+	pills_bot "github.com/fulviodenza/pills-of-cs/bot"
 ) //This the token you receive from botfather
 
 type Env struct {
@@ -23,5 +25,5 @@ func main() {
 		os.Exit(1)
 	}
 
-	bot.start()
+	bot.Start()
 }

@@ -1,4 +1,4 @@
-module bot
+module github.com/fulviodenza/pills-of-cs/bot
 
 go 1.19
 
