@@ -1,6 +1,8 @@
 package bot
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"os"
 
@@ -8,12 +10,14 @@ import (
 	cfg "github.com/SakoDroid/telego/configs"
 	"github.com/SakoDroid/telego/objects"
 	"github.com/joho/godotenv"
+	"github.com/jomei/notionapi"
 )
 
 type Bot struct {
 	TelegramToken string
 	Cfg           cfg.BotConfigs
 	Bot           bt.Bot
+	NotionClient  notionapi.Client
 }
 
 func NewBotWithConfig() (*Bot, error) {
@@ -40,10 +44,13 @@ func NewBotWithConfig() (*Bot, error) {
 		return nil, err
 	}
 
+	notion_client := notionapi.NewClient("secret_cHeqVXYXaRURTy8PJiLn81PL4G27Mxnm5hYA0BtWvyD")
+
 	return &Bot{
 		TelegramToken: token,
 		Cfg:           bot_config,
 		Bot:           *b,
+		NotionClient:  *notion_client,
 	}, nil
 }
 
@@ -52,9 +59,7 @@ func (b *Bot) Start() error {
 	messageChannel, _ := b.Bot.AdvancedMode().RegisterChannel("", "message")
 
 	for {
-		//Wait for updates
 		up := <-*messageChannel
-		//Print the text
 		b.handleMessage(up)
 	}
 }
@@ -67,6 +72,9 @@ func (b *Bot) handleMessage(up *objects.Update) {
 			return
 		}
 	case up.Message.Text == "/pill":
-
+		page, err := b.NotionClient.Page.Get(context.Background(), "48b530629463419ca92e22cc6ef50dab")
+		if err != nil {
+			fmt.Println(page)
+		}
 	}
 }

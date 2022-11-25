@@ -5,7 +5,7 @@ import (
 	"os"
 
 	pills_bot "github.com/fulviodenza/pills-of-cs/bot"
-) //This the token you receive from botfather
+)
 
 type Env struct {
 	TelegramToken string `json:"TELEGRAM_TOKEN"`
