@@ -1,0 +1,43 @@
+name: Staging Deployment
+
+on:
+  push:
+    tags:
+    - stage-*
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkouts files
+        uses: actions/checkout@latest
+      
+      - name: Build and push Docker images
+        uses: docker/build-push-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          repository: fulviodenza/pills-of-cs
+          tag_with_ref: true
+          tag_with_sha: true
+    
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout files
+        uses: actions/checkout@latest
+
+      - name: Get tag name
+        uses: olegtarasov/get-tag@v2
+
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Provision Droplet and deploy container
+        run: cd ~ && git clone https://github.com/fulviodenza/pills-of-cs.git && cd pills-of-cs && go run main.go
+      
