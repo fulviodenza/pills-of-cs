@@ -15,6 +15,10 @@
         {
             "title": "Interceptor",
             "body": "a software construct that will break the usual flow of control and allow other code to be executed."
+        },
+        {
+            "title": "Grid Computing",
+            "body": "Constructed as a federation of computer systems, where each system may fall under a different administrative domain, and may be very different when it comes to hardware, software, and deployed network technology."
         }
     ]
 }
