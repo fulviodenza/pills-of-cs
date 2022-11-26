@@ -37,7 +37,6 @@ jobs:
         uses: digitalocean/action-doctl@v2
         with:
           token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+          scripts: cd ~ && git clone https://github.com/fulviodenza/pills-of-cs.git && cd pills-of-cs && go run main.go
 
-      - name: Provision Droplet and deploy container
-        run: cd ~ && git clone https://github.com/fulviodenza/pills-of-cs.git && cd pills-of-cs && go run main.go
       
