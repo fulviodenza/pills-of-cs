@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Checkouts files
         uses: actions/checkout@latest
+        with:
+          token: ${{ secrets.PAT }}
 
       - name: Set GH_SHA for versioning images, Required by docker-compose
         run: echo "GITHUB_SHA_SHORT=$(echo $GITHUB_SHA | head -c7)" >> $GITHUB_ENV
