@@ -4,6 +4,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"time"
 
 	bt "github.com/SakoDroid/telego"
 	cfg "github.com/SakoDroid/telego/configs"
@@ -77,6 +78,7 @@ func (b *Bot) handleMessage(up *objects.Update) {
 		if err != nil {
 			return
 		}
+		rand.Seed(time.Now().Unix())
 		randomIndex := rand.Intn(len(serializedPills.Pills))
 		_, err = b.Bot.SendMessage(
 			up.Message.Chat.Id,
