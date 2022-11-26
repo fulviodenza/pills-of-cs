@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Checkouts files
-        uses: actions/checkout@latest
+        uses: actions/checkout@v2.5.0
         with:
           token: ${{ secrets.PAT }}
 
