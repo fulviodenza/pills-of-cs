@@ -4,6 +4,9 @@ WORKDIR /app
 
 COPY go.mod ./
 COPY go.sum ./
+COPY ./bot/go.mod ./bot/go.mod
+COPY ./bot/go.sum ./bot/go.sum
+
 RUN go mod download
 
 COPY *.go ./
