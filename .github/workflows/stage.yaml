@@ -47,7 +47,7 @@ jobs:
           key: ${{ secrets.SSHKEY }}
           envs: REGISTRY_HOST,{{ secrets.DIGITALOCEAN_ACCESS_TOKEN }},GITHUB_SHA
           script: |
-            # Login to registry
+            # Login to registry all these stuff will never work at the first time
             GITHUB_SHA_SHORT=$(echo $GITHUB_SHA | head -c7)
             docker login -u ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }} -p ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }} registry.digitalocean.com
             docker create -ti --name bot $(echo $REGISTRY_HOST)/$(echo $IMAGE_NAME):$(echo $GITHUB_SHA_SHORT) bash
@@ -55,7 +55,7 @@ jobs:
             docker system prune -af
             git checkout master && git pull
             GITHUB_SHA_SHORT=$(echo $GITHUB_SHA | head -c7) REGISTRY_HOST=$(echo $REGISTRY_HOST) docker-compose down --rmi all
-            GITHUB_SHA_SHORT=$(echo $GITHUB_SHA | head -c7) REGISTRY_HOST=$(echo $REGISTRY_HOST) docker-compose -f docker-compose.yml -f docker-compose.prod.yml pull
+            GITHUB_SHA_SHORT=$(echo $GITHUB_SHA | head -c7) REGISTRY_HOST=$(echo $REGISTRY_HOST) docker-compose -f docker-compose.yml pull
             # Start up cluster
-            GITHUB_SHA_SHORT=$(echo $GITHUB_SHA | head -c7) REGISTRY_HOST=$(echo $REGISTRY_HOST) docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+            GITHUB_SHA_SHORT=$(echo $GITHUB_SHA | head -c7) REGISTRY_HOST=$(echo $REGISTRY_HOST) docker-compose -f docker-compose.yml up -d
             popd
