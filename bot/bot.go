@@ -1,16 +1,15 @@
 package bot
 
 import (
-	"context"
-	"fmt"
 	"log"
+	"math/rand"
 	"os"
 
 	bt "github.com/SakoDroid/telego"
 	cfg "github.com/SakoDroid/telego/configs"
 	"github.com/SakoDroid/telego/objects"
+	notionapi "github.com/dstotijn/go-notion"
 	"github.com/joho/godotenv"
-	"github.com/jomei/notionapi"
 )
 
 const PAGE_ID = "48b530629463419ca92e22cc6ef50dab"
@@ -46,7 +45,7 @@ func NewBotWithConfig() (*Bot, error) {
 		return nil, err
 	}
 
-	notion_client := notionapi.NewClient(notionapi.Token(os.Getenv("NOTION_TOKEN")))
+	notion_client := notionapi.NewClient(os.Getenv("NOTION_TOKEN"))
 
 	return &Bot{
 		TelegramToken: token,
@@ -74,9 +73,13 @@ func (b *Bot) handleMessage(up *objects.Update) {
 			return
 		}
 	case up.Message.Text == "/pill":
-		page, err := b.NotionClient.Page.Get(context.Background(), PAGE_ID)
+		serializedPills, err := parse()
 		if err != nil {
-			fmt.Println(page)
+			return
 		}
+		randomIndex := rand.Intn(len(serializedPills.Pills))
+		_, err = b.Bot.SendMessage(
+			up.Message.Chat.Id,
+			serializedPills.Pills[randomIndex].Title+": "+serializedPills.Pills[randomIndex].Body, "", up.Message.MessageId, false, false)
 	}
 }
