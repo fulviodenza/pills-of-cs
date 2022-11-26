@@ -5,6 +5,10 @@ on:
     tags:
     - stage-*
 
+env:
+  REGISTRY_HOST: 'registry.digitalocean.com/banach'
+  IMAGE_NAME: 'pills-of-cs'
+  
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -12,7 +16,13 @@ jobs:
     steps:
       - name: Checkouts files
         uses: actions/checkout@latest
+
+      - name: Set GH_SHA for versioning images, Required by docker-compose
+        run: echo "GITHUB_SHA_SHORT=$(echo $GITHUB_SHA | head -c7)" >> $GITHUB_ENV
       
+      - name: Build image
+        run: docker build -t $(echo $REGISTRY_HOST)/$(echo $IMAGE_NAME):$(echo $GITHUB_SHA | head -c7) -f Dockerfile .
+
       - name: Build and push Docker images
         uses: docker/build-push-action@v1
         with:
@@ -21,22 +31,29 @@ jobs:
           repository: fulviodenza/pills-of-cs
           tag_with_ref: true
           tag_with_sha: true
-    
+
   deploy:
-    needs: build
     runs-on: ubuntu-latest
+    needs: build_and_push
 
     steps:
-      - name: Checkout files
-        uses: actions/checkout@latest
-
-      - name: Get tag name
-        uses: olegtarasov/get-tag@v2
-
-      - name: Install doctl
-        uses: digitalocean/action-doctl@v2
+      - name: Deploy to DO droplet via SSH action
+        uses: appleboy/ssh-action@v0.1.3
         with:
-          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-          scripts: cd ~ && git clone https://github.com/fulviodenza/pills-of-cs.git && cd pills-of-cs && go run main.go
-
-      
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSHKEY }}
+          envs: REGISTRY_HOST,{{ secrets.DIGITALOCEAN_ACCESS_TOKEN }},GITHUB_SHA
+          script: |
+            # Login to registry
+            GITHUB_SHA_SHORT=$(echo $GITHUB_SHA | head -c7)
+            docker login -u ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }} -p ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }} registry.digitalocean.com
+            docker create -ti --name bot $(echo $REGISTRY_HOST)/$(echo $IMAGE_NAME):$(echo $GITHUB_SHA_SHORT) bash
+            sudo docker rm -f bot
+            docker system prune -af
+            git checkout master && git pull
+            GITHUB_SHA_SHORT=$(echo $GITHUB_SHA | head -c7) REGISTRY_HOST=$(echo $REGISTRY_HOST) docker-compose down --rmi all
+            GITHUB_SHA_SHORT=$(echo $GITHUB_SHA | head -c7) REGISTRY_HOST=$(echo $REGISTRY_HOST) docker-compose -f docker-compose.yml -f docker-compose.prod.yml pull
+            # Start up cluster
+            GITHUB_SHA_SHORT=$(echo $GITHUB_SHA | head -c7) REGISTRY_HOST=$(echo $REGISTRY_HOST) docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+            popd
