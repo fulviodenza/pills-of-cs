@@ -1,9 +1,9 @@
 name: Staging Deployment
 
 on:
-  push:
-    tags:
-    - stage-*
+  pull_request:
+    branches:
+    - 'release/**'
 
 env:
   REGISTRY_HOST: 'registry.digitalocean.com/banach'
