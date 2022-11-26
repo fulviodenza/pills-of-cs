@@ -23,6 +23,10 @@
         {
             "title": "On path attack",
             "body": "https://www.cloudflare.com/learning/security/threats/on-path-attack/"
+        },
+        {
+            "title": "Cluster Computing",
+            "body": "The underlying hardware consists of a collection of similar workstations or PCs, closely connected by means of a high-speed local-area network."
         }
     ]
 }
