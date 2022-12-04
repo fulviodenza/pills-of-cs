@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"encoding/json"
 	"math/rand"
 	"os"
 	"time"
@@ -61,19 +62,37 @@ func (b *Bot) Start() error {
 func (b *Bot) handleMessage(up *objects.Update) {
 	switch {
 	case up.Message.Text == "/start":
-		_, err := b.Bot.SendMessage(up.Message.Chat.Id, "Hello from the server!", "", up.Message.MessageId, false, false)
+		_, err := b.Bot.SendMessage(up.Message.Chat.Id, "Welcome to the pills-of-cs bot! Press `/pill` to request a pill or `/help` to get informations about the bot", "", up.Message.MessageId, false, false)
 		if err != nil {
 			return
 		}
 	case up.Message.Text == "/pill":
-		serializedPills, err := parse()
+		var dst []byte
+		_, err := parse(&dst)
+		if err != nil {
+			return
+		}
+
+		sp := SerializedPills{}
+		err = json.Unmarshal(dst, &sp)
 		if err != nil {
 			return
 		}
 		rand.Seed(time.Now().Unix())
-		randomIndex := rand.Intn(len(serializedPills.Pills))
+
+		randomIndex := rand.Intn(len(sp.Pills))
 		_, err = b.Bot.SendMessage(
 			up.Message.Chat.Id,
-			"BRUH: "+serializedPills.Pills[randomIndex].Title+": "+serializedPills.Pills[randomIndex].Body, "", up.Message.MessageId, false, false)
+			sp.Pills[randomIndex].Title+": "+sp.Pills[randomIndex].Body, "", up.Message.MessageId, false, false)
+	case up.Message.Text == "/start":
+		helpMessage, err := os.ReadFile("help_message.txt")
+		if err != nil {
+			return
+		}
+		_, err = b.Bot.SendMessage(up.Message.Chat.Id, string(helpMessage), "", up.Message.MessageId, false, false)
+		if err != nil {
+			return
+		}
 	}
+
 }
