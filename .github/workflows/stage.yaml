@@ -55,8 +55,8 @@ jobs:
             sudo /usr/bin/docker rm -f bot
             /usr/bin/docker system prune -af
             cd pills-of-cs && git checkout master && git pull
-            GITHUB_SHA_SHORT=$(echo $GITHUB_SHA | head -c7) REGISTRY_HOST=$(echo $REGISTRY_HOST) usr/bin/docker-compose down --rmi all
-            GITHUB_SHA_SHORT=$(echo $GITHUB_SHA | head -c7) REGISTRY_HOST=$(echo $REGISTRY_HOST) usr/bin/docker-compose -f docker-compose.yml pull
+            GITHUB_SHA_SHORT=$(echo $GITHUB_SHA | head -c7) REGISTRY_HOST=$(echo $REGISTRY_HOST) docker-compose down --rmi all
+            GITHUB_SHA_SHORT=$(echo $GITHUB_SHA | head -c7) REGISTRY_HOST=$(echo $REGISTRY_HOST) docker-compose -f docker-compose.yml pull
             # Start up cluster
-            GITHUB_SHA_SHORT=$(echo $GITHUB_SHA | head -c7) REGISTRY_HOST=$(echo $REGISTRY_HOST) usr/bin/docker-compose -f docker-compose.yml up -d
+            GITHUB_SHA_SHORT=$(echo $GITHUB_SHA | head -c7) REGISTRY_HOST=$(echo $REGISTRY_HOST) docker-compose -f docker-compose.yml up -d
             popd
