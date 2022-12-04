@@ -48,15 +48,15 @@ jobs:
           envs: REGISTRY_HOST,{{ secrets.DIGITALOCEAN_ACCESS_TOKEN }},GITHUB_SHA
           script: |
             # Stop running container
-            docker stop $(echo $IMAGE_NAME)
+            docker stop $IMAGE_NAME
 
             # Remove old container
-            docker rm $(echo $IMAGE_NAME)
+            docker rm $IMAGE_NAME
 
             # Run a new container from a new image
             docker run -d \
             --restart always \
-            --env TELEGRAM_TOKEN=$TELEGRAM_TOKEN
-            --env NOTION_TOKEN=$NOTION_TOKEN
+            --env TELEGRAM_TOKEN=$TELEGRAM_TOKEN \
+            --env NOTION_TOKEN=$NOTION_TOKEN \
             --name $(echo $IMAGE_NAME) \
             $(echo $REGISTRY_HOST)/$(echo $IMAGE_NAME):$(echo $GITHUB_SHA | head -c7) $(echo $COMMAND)
