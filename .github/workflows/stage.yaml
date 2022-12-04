@@ -54,7 +54,7 @@ jobs:
             docker create -ti --name bot $(echo $REGISTRY_HOST)/$(echo $IMAGE_NAME):$(echo $GITHUB_SHA_SHORT) bash
             sudo docker rm -f bot
             docker system prune -af
-            git clone https://github.com/fulviodenza/pills-of-cs.git
+            git clone https://github.com/fulviodenza/pills-of-cs.git && cd pills-of-cs
             git checkout master && git pull
             GITHUB_SHA_SHORT=$(echo $GITHUB_SHA | head -c7) REGISTRY_HOST=$(echo $REGISTRY_HOST) docker-compose down --rmi all
             GITHUB_SHA_SHORT=$(echo $GITHUB_SHA | head -c7) REGISTRY_HOST=$(echo $REGISTRY_HOST) docker-compose -f docker-compose.yml pull
