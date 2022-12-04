@@ -8,6 +8,8 @@ on:
 env:
   REGISTRY_HOST: 'registry.digitalocean.com/banach'
   IMAGE_NAME: 'pills-of-cs'
+  TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+  NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
   
 jobs:
   build:
@@ -15,24 +17,23 @@ jobs:
 
     steps:
       - name: Checkouts files
-        uses: actions/checkout@latest
+        uses: actions/checkout@v2.5.0
         with:
           token: ${{ secrets.PAT }}
 
-      - name: Set GH_SHA for versioning images, Required by docker-compose
-        run: echo "GITHUB_SHA_SHORT=$(echo $GITHUB_SHA | head -c7)" >> $GITHUB_ENV
-      
       - name: Build image
         run: docker build -t $(echo $REGISTRY_HOST)/$(echo $IMAGE_NAME):$(echo $GITHUB_SHA | head -c7) -f Dockerfile .
 
-      - name: Build and push Docker images
-        uses: docker/build-push-action@v1
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
-          repository: fulviodenza/pills-of-cs
-          tag_with_ref: true
-          tag_with_sha: true
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Log in to DigitalOcean Container Registry with short-lived credentials
+        run: doctl registry login --expiry-seconds 600
+
+      - name: Push image to DigitalOcean Container Registry
+        run: docker push $(echo $REGISTRY_HOST)/$(echo $IMAGE_NAME):$(echo $GITHUB_SHA | head -c7)
 
   deploy:
     runs-on: ubuntu-latest
@@ -40,22 +41,24 @@ jobs:
 
     steps:
       - name: Deploy to DO droplet via SSH action
-        uses: appleboy/ssh-action@v0.1.3
+        uses: appleboy/ssh-action@v0.1.3        
         with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSHKEY }}
-          envs: REGISTRY_HOST,{{ secrets.DIGITALOCEAN_ACCESS_TOKEN }},GITHUB_SHA
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          envs: REGISTRY_HOST,{{ secrets.DIGITALOCEAN_ACCESS_TOKEN }},TELEGRAM_TOKEN,NOTION_TOKEN,GITHUB_SHA,IMAGE_NAME
           script: |
-            # Login to registry
-            GITHUB_SHA_SHORT=$(echo $GITHUB_SHA | head -c7)
-            docker login -u ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }} -p ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }} registry.digitalocean.com
-            docker create -ti --name bot $(echo $REGISTRY_HOST)/$(echo $IMAGE_NAME):$(echo $GITHUB_SHA_SHORT) bash
-            sudo docker rm -f bot
-            docker system prune -af
-            git checkout master && git pull
-            GITHUB_SHA_SHORT=$(echo $GITHUB_SHA | head -c7) REGISTRY_HOST=$(echo $REGISTRY_HOST) docker-compose down --rmi all
-            GITHUB_SHA_SHORT=$(echo $GITHUB_SHA | head -c7) REGISTRY_HOST=$(echo $REGISTRY_HOST) docker-compose -f docker-compose.yml -f docker-compose.prod.yml pull
-            # Start up cluster
-            GITHUB_SHA_SHORT=$(echo $GITHUB_SHA | head -c7) REGISTRY_HOST=$(echo $REGISTRY_HOST) docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-            popd
+            # Stop running container
+            docker stop $(echo $IMAGE_NAME)
+
+            # Remove old container
+            docker rm $(echo $IMAGE_NAME)
+
+            # Run a new container from a new image
+            docker run -d \
+            --restart always \
+            --env TELEGRAM_TOKEN=$TELEGRAM_TOKEN \
+            --env NOTION_TOKEN=$NOTION_TOKEN \
+            --name $(echo $IMAGE_NAME) \
+            $(echo $REGISTRY_HOST)/$(echo $IMAGE_NAME):$(echo $GITHUB_SHA | head -c7) make start
+            
