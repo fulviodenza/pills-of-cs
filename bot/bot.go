@@ -84,15 +84,15 @@ func (b *Bot) handleMessage(up *objects.Update) {
 		_, err = b.Bot.SendMessage(
 			up.Message.Chat.Id,
 			sp.Pills[randomIndex].Title+": "+sp.Pills[randomIndex].Body, "", up.Message.MessageId, false, false)
-	case up.Message.Text == "/start":
-		helpMessage, err := os.ReadFile("help_message.txt")
+	case up.Message.Text == "/help":
+		var dst []byte
+		_, err := parse(&dst)
 		if err != nil {
 			return
 		}
-		_, err = b.Bot.SendMessage(up.Message.Chat.Id, string(helpMessage), "", up.Message.MessageId, false, false)
+		_, err = b.Bot.SendMessage(up.Message.Chat.Id, string(dst), "", up.Message.MessageId, false, false)
 		if err != nil {
 			return
 		}
 	}
-
 }
