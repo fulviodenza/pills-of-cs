@@ -1,0 +1,5 @@
+`pills-of-cs` is a bot to obtain pills of computer science, such as
+definitions, curiosity and best practices in small pills, news about
+computer science world (to be implemented) and other stuff TBD.
+
+To start using the bot run `/pills/`
