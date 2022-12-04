@@ -1,7 +1,6 @@
 package bot
 
 import (
-	"log"
 	"math/rand"
 	"os"
 	"time"
@@ -10,7 +9,6 @@ import (
 	cfg "github.com/SakoDroid/telego/configs"
 	"github.com/SakoDroid/telego/objects"
 	notionapi "github.com/dstotijn/go-notion"
-	"github.com/joho/godotenv"
 )
 
 const PAGE_ID = "48b530629463419ca92e22cc6ef50dab"
@@ -23,12 +21,6 @@ type Bot struct {
 }
 
 func NewBotWithConfig() (*Bot, error) {
-
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("[NewBotWithConfig]: %v", err)
-		return nil, err
-	}
 
 	token := os.Getenv("TELEGRAM_TOKEN")
 
