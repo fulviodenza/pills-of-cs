@@ -8,6 +8,8 @@ on:
 env:
   REGISTRY_HOST: 'registry.digitalocean.com/banach'
   IMAGE_NAME: 'pills-of-cs'
+  TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+  NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
   
 jobs:
   build:
@@ -38,12 +40,6 @@ jobs:
     needs: build
 
     steps:
-      - shell: bash
-        env:
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
-        run:
-          example command $SUPER_SECRET #use this
       - name: Deploy to DO droplet via SSH action
         uses: appleboy/ssh-action@v0.1.3        
         with:
