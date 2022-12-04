@@ -47,10 +47,10 @@ jobs:
           envs: REGISTRY_HOST,{{ secrets.DIGITALOCEAN_ACCESS_TOKEN }},GITHUB_SHA
           script: |
             # Stop running container
-            docker stop $IMAGE_NAME
+            docker stop $(echo $IMAGE_NAME)
 
             # Remove old container
-            docker rm $IMAGE_NAME
+            docker rm $(echo $IMAGE_NAME)
 
             # Run a new container from a new image
             docker run -d \
