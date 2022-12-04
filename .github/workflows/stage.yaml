@@ -8,7 +8,6 @@ on:
 env:
   REGISTRY_HOST: 'registry.digitalocean.com/banach'
   IMAGE_NAME: 'pills-of-cs'
-  COMMAND: "make start"
   
 jobs:
   build:
@@ -45,13 +44,8 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           password: ${{ secrets.SSH_PASSWORD }}
-          envs: REGISTRY_HOST,{{ secrets.DIGITALOCEAN_ACCESS_TOKEN }},GITHUB_SHA
+          envs: REGISTRY_HOST,{{ secrets.DIGITALOCEAN_ACCESS_TOKEN }},GITHUB_SHA,IMAGE_NAME
           script: |
-            # Stop running container
-            docker stop $IMAGE_NAME
-
-            # Remove old container
-            docker rm $IMAGE_NAME
 
             # Run a new container from a new image
             docker run -d \
@@ -59,4 +53,4 @@ jobs:
             --env TELEGRAM_TOKEN=$TELEGRAM_TOKEN \
             --env NOTION_TOKEN=$NOTION_TOKEN \
             --name $(echo $IMAGE_NAME) \
-            $(echo $REGISTRY_HOST)/$(echo $IMAGE_NAME):$(echo $GITHUB_SHA | head -c7) $(echo $COMMAND)
+            $(echo $REGISTRY_HOST)/$(echo $IMAGE_NAME):$(echo $GITHUB_SHA | head -c7) make start
