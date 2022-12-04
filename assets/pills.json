@@ -23,6 +23,26 @@
         {
             "title": "On path attack",
             "body": "https://www.cloudflare.com/learning/security/threats/on-path-attack/"
+        },
+        {
+            "title": "Thread-Caching Malloc",
+            "body": "faster than the glibc 2.3 malloc. TCMalloc implementation takes approximately 50 nanoseconds to execute a malloc/free pair on a 2.8 GHz P4 (for small objects). Reduce lock contention for multi-threaded programs. For small objects, there is virtually zero contention. For large objects, TCMalloc tries to use fine grained and efficient spinlocks. Space-efficient representation of small objects. For example, N 8-byte objects can be allocated while using space approximately 8N * 1.01 bytes. TCMalloc assigns each thread a thread-local cache. Small allocations are satisfied from the thread-local cache. Objects are moved from central data structures into a thread-local cache as needed, and periodic garbage collections are used to migrate memory back from a thread-local cache into the central data structures. TCMalloc treates objects with size <= 32K (small objects) differently from larger objects. Large objects are allocated directly from the central heap using a page-level allocator (a page is a 4K aligned region of memory). I.e., a large object is always page-aligned and occupies an integral number of pages. A run of pages can be carved up into a sequence of small objects, each equally sized. For example a run of one page (4K) can be carved up into 32 objects of size 128 bytes each."
+        },
+        {
+            "title": "Do not return []byte in Go",
+            "body": "Returning bytes forces a heap allocation for the returned slice. Since the slice's memory must survive the function's lifespan, the escape analysis has to move it to the heap, where allocations are expensive and put pressure on the garbage collector. Since Go 1.12, the inliner learned how to inline functions that call other functions. We can use this capability to make our allocating APIs as efficient as any other. (https://go.dev/play/p/lvY_5h-qPPf). While dst normally escapes to the heap, in practice the X25519 body will be inlined in the caller along with the dst allocation, and if the caller is careful not to let it escape, it will stay on the caller's stack. It will be as if the caller were using the hidden, less ergonomic, and more efficient x25519 API."
+        },
+        {
+            "title": "Consistencies",
+            "body": "Monotonic Writes - A write operation by a process on a data item x is completed before any successive write operation on x by the same process.\nRead your writes → The effect of a write operation by a process on data item x will always be seen by a successive read operation on x by the same process\nWrites follow reads → A write operation by a process on a data item x following a previous read operation on x by the same process is guaranteed to take place on the same or a more recent value of x that was read"
+        },
+        {
+            "title": "ACID Properties:",
+            "body": "Atomic: To the outside world, the transaction happens indivisibly\nConsistent: The transaction does not violate system invariants\n\nIsolated: Concurrent transactions do not interfere with each other\nDurable: Once a transmission commits, the changes are permanent."
+        },
+        {
+            "title": "Generics implementation - GC Shape Stenciling",
+            "body": "https://go.googlesource.com/proposal/+/refs/heads/master/design/generics-implementation-gcshape.md"
         }
     ]
 }

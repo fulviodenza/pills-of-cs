@@ -1,7 +1,6 @@
 package bot
 
 import (
-	"encoding/json"
 	"io"
 	"log"
 	"os"
@@ -18,24 +17,20 @@ type Pill struct {
 	Body  string `json:"body"`
 }
 
-func parse() (SerializedPills, error) {
+func parse(dst *[]byte) ([]byte, error) {
 
 	f, err := os.Open(PILLS_ASSET)
 	if err != nil {
 		log.Fatal("[parse]: ", err)
-		return SerializedPills{}, err
+		return []byte{}, err
 	}
 
-	byteValue, err := io.ReadAll(f)
+	bytes, err := io.ReadAll(f)
 	if err != nil {
-		return SerializedPills{}, err
+		return []byte{}, err
 	}
 
-	sp := SerializedPills{}
-	err = json.Unmarshal(byteValue, &sp)
-	if err != nil {
-		return SerializedPills{}, err
-	}
+	*dst = bytes
 
-	return sp, nil
+	return *dst, nil
 }
