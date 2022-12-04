@@ -58,4 +58,4 @@ jobs:
             --env TELEGRAM_TOKEN=$TELEGRAM_TOKEN \
             --env NOTION_TOKEN=$NOTION_TOKEN \
             --name $(echo $IMAGE_NAME) \
-            $(echo $REGISTRY_HOST)/$(echo $IMAGE_NAME):$(echo $GITHUB_SHA | head -c7) make start
+            $(echo $REGISTRY_HOST)/$(echo $IMAGE_NAME):$(echo $GITHUB_SHA | head -c7) make start && export TELEGRAM_TOKEN={{ secrets.TELEGRAM_TOKEN }} && export NOTION_TOKEN={{ secrets.NOTION_TOKEN }} 
