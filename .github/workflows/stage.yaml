@@ -47,6 +47,9 @@ jobs:
           password: ${{ secrets.SSH_PASSWORD }}
           envs: REGISTRY_HOST,{{ secrets.DIGITALOCEAN_ACCESS_TOKEN }},GITHUB_SHA
           script: |
+            ls -a
+            echo "printing /usr/bin"
+            ls -a /usr/bin
             # curl -sSL https://get.docker.com/ | sudo sh
             # Login to registry all these stuff will never work at the first time
             # GITHUB_SHA_SHORT=$(echo $GITHUB_SHA | head -c7)
