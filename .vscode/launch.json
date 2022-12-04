@@ -11,8 +11,6 @@
             "mode": "auto",
             "program": "main.go",
             "env": { 
-                "TELEGRAM_TOKEN": "5849453289:AAFL2xa2unWOmDi7YNuQZQpCox6yqSPXUiA",
-                "NOTION_TOKEN": "48b530629463419ca92e22cc6ef50dab"
             }
         }
     ]
