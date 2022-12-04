@@ -82,6 +82,6 @@ func (b *Bot) handleMessage(up *objects.Update) {
 		randomIndex := rand.Intn(len(serializedPills.Pills))
 		_, err = b.Bot.SendMessage(
 			up.Message.Chat.Id,
-			serializedPills.Pills[randomIndex].Title+": "+serializedPills.Pills[randomIndex].Body, "", up.Message.MessageId, false, false)
+			"BRUH: "+serializedPills.Pills[randomIndex].Title+": "+serializedPills.Pills[randomIndex].Body, "", up.Message.MessageId, false, false)
 	}
 }
