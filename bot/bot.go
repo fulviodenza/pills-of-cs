@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"math/rand"
 	"os"
+	"strings"
 	"time"
 
 	bt "github.com/SakoDroid/telego"
@@ -12,7 +13,11 @@ import (
 	notionapi "github.com/dstotijn/go-notion"
 )
 
-const PAGE_ID = "48b530629463419ca92e22cc6ef50dab"
+const (
+	PAGE_ID        = "48b530629463419ca92e22cc6ef50dab"
+	NOTION_TOKEN   = "NOTION_TOKEN"
+	TELEGRAM_TOKEN = "TELEGRAM_TOKEN"
+)
 
 type Bot struct {
 	TelegramToken string
@@ -23,13 +28,28 @@ type Bot struct {
 
 func NewBotWithConfig() (*Bot, error) {
 
-	token := os.Getenv("TELEGRAM_TOKEN")
+	var (
+		telegramToken string
+		notionToken   string
+	)
+
+	// The function does not work?
+	// F*** off, I implement it by myself
+	for _, env := range os.Environ() {
+		pair := strings.SplitN(env, "=", 2)
+		if pair[0] == TELEGRAM_TOKEN {
+			telegramToken = pair[1]
+		}
+		if pair[0] == NOTION_TOKEN {
+			notionToken = pair[1]
+		}
+	}
 
 	cf := cfg.DefaultUpdateConfigs()
 
 	bot_config := cfg.BotConfigs{
 		BotAPI: cfg.DefaultBotAPI,
-		APIKey: token, UpdateConfigs: cf,
+		APIKey: telegramToken, UpdateConfigs: cf,
 		Webhook:        false,
 		LogFileAddress: cfg.DefaultLogFile,
 	}
@@ -39,10 +59,10 @@ func NewBotWithConfig() (*Bot, error) {
 		return nil, err
 	}
 
-	notion_client := notionapi.NewClient(os.Getenv("NOTION_TOKEN"))
+	notion_client := notionapi.NewClient(notionToken)
 
 	return &Bot{
-		TelegramToken: token,
+		TelegramToken: telegramToken,
 		Cfg:           bot_config,
 		Bot:           *b,
 		NotionClient:  *notion_client,
@@ -80,7 +100,7 @@ func (b *Bot) handleMessage(up *objects.Update) {
 		}
 		rand.Seed(time.Now().UnixNano())
 
-		randomIndex := rand.Intn(len(sp.Pills))
+		randomIndex := makeTimestamp(len(sp.Pills))
 		_, err = b.Bot.SendMessage(
 			up.Message.Chat.Id,
 			sp.Pills[randomIndex].Title+": "+sp.Pills[randomIndex].Body, "Markdown", up.Message.MessageId, false, false)
@@ -95,4 +115,8 @@ func (b *Bot) handleMessage(up *objects.Update) {
 			return
 		}
 	}
+}
+
+func makeTimestamp(len int) int64 {
+	return (time.Now().UnixNano() / int64(time.Millisecond)) % int64(len)
 }
