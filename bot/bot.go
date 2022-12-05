@@ -78,7 +78,7 @@ func (b *Bot) handleMessage(up *objects.Update) {
 		if err != nil {
 			return
 		}
-		rand.Seed(time.Now().Unix())
+		rand.Seed(time.Now().UnixNano())
 
 		randomIndex := rand.Intn(len(sp.Pills))
 		_, err = b.Bot.SendMessage(
