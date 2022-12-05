@@ -62,13 +62,13 @@ func (b *Bot) Start() error {
 func (b *Bot) handleMessage(up *objects.Update) {
 	switch {
 	case up.Message.Text == "/start":
-		_, err := b.Bot.SendMessage(up.Message.Chat.Id, "Welcome to the pills-of-cs bot! Press `/pill` to request a pill or `/help` to get informations about the bot", "", up.Message.MessageId, false, false)
+		_, err := b.Bot.SendMessage(up.Message.Chat.Id, "Welcome to the pills-of-cs bot! Press `/pill` to request a pill or `/help` to get informations about the bot", "Markdown", up.Message.MessageId, false, false)
 		if err != nil {
 			return
 		}
 	case up.Message.Text == "/pill":
 		var dst []byte
-		_, err := parse(&dst)
+		_, err := parse(PILLS_ASSET, &dst)
 		if err != nil {
 			return
 		}
@@ -83,14 +83,14 @@ func (b *Bot) handleMessage(up *objects.Update) {
 		randomIndex := rand.Intn(len(sp.Pills))
 		_, err = b.Bot.SendMessage(
 			up.Message.Chat.Id,
-			sp.Pills[randomIndex].Title+": "+sp.Pills[randomIndex].Body, "", up.Message.MessageId, false, false)
+			sp.Pills[randomIndex].Title+": "+sp.Pills[randomIndex].Body, "Markdown", up.Message.MessageId, false, false)
 	case up.Message.Text == "/help":
 		var dst []byte
-		_, err := parse(&dst)
+		_, err := parse(HELP_MESSAGE_ASSET, &dst)
 		if err != nil {
 			return
 		}
-		_, err = b.Bot.SendMessage(up.Message.Chat.Id, string(dst), "", up.Message.MessageId, false, false)
+		_, err = b.Bot.SendMessage(up.Message.Chat.Id, string(dst), "Markdown", up.Message.MessageId, false, false)
 		if err != nil {
 			return
 		}
