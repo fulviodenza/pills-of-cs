@@ -12,16 +12,6 @@ services:
       - 27017
     volumes:
       - "mongo:/data/db"
-
-  bot:
-    depends_on:
-      - "mongo"
-    networks:
-      - server-net
-    build:
-      context: .
-      dockerfile: ./Dockerfile
-
 volumes:
   mongo:
     driver: local
