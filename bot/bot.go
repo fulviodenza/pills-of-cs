@@ -2,21 +2,28 @@ package bot
 
 import (
 	"encoding/json"
-	"math/rand"
+	"errors"
+	"log"
 	"os"
+	adapters "pills-of-cs/adapters/mongo"
+	"pills-of-cs/entities"
+	"pills-of-cs/parser"
 	"strings"
 	"time"
 
 	bt "github.com/SakoDroid/telego"
 	cfg "github.com/SakoDroid/telego/configs"
 	"github.com/SakoDroid/telego/objects"
-	notionapi "github.com/dstotijn/go-notion"
+	"github.com/jomei/notionapi"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 const (
-	PAGE_ID        = "48b530629463419ca92e22cc6ef50dab"
-	NOTION_TOKEN   = "NOTION_TOKEN"
-	TELEGRAM_TOKEN = "TELEGRAM_TOKEN"
+	NOTION_TOKEN       = "NOTION_TOKEN"
+	TELEGRAM_TOKEN     = "TELEGRAM_TOKEN"
+	PAGE_ID            = "48b530629463419ca92e22cc6ef50dab"
+	PILLS_ASSET        = "./assets/pills.json"
+	HELP_MESSAGE_ASSET = "./assets/help_message.txt"
 )
 
 type Bot struct {
@@ -24,14 +31,35 @@ type Bot struct {
 	Cfg           cfg.BotConfigs
 	Bot           bt.Bot
 	NotionClient  notionapi.Client
+	Pills         []entities.Pill
+	HelpMessage   string
+	UserRepo      adapters.UserRepo
 }
 
-func NewBotWithConfig() (*Bot, error) {
+func NewBotWithConfig(client *mongo.Client) (*Bot, error) {
 
 	var (
 		telegramToken string
 		notionToken   string
 	)
+
+	var dst []byte
+	_, err := parser.Parse(PILLS_ASSET, &dst)
+	if err != nil {
+		return nil, errors.New(err.Error())
+	}
+
+	sp := entities.SerializedPills{}
+	err = json.Unmarshal(dst, &sp)
+	if err != nil {
+		return nil, errors.New(err.Error())
+	}
+
+	dst = []byte{}
+	_, err = parser.Parse(HELP_MESSAGE_ASSET, &dst)
+	if err != nil {
+		return nil, err
+	}
 
 	// The function does not work?
 	// F*** off, I implement it by myself
@@ -59,13 +87,18 @@ func NewBotWithConfig() (*Bot, error) {
 		return nil, err
 	}
 
-	notion_client := notionapi.NewClient(notionToken)
+	notion_client := notionapi.NewClient(notionapi.Token(notionToken))
 
 	return &Bot{
 		TelegramToken: telegramToken,
 		Cfg:           bot_config,
 		Bot:           *b,
 		NotionClient:  *notion_client,
+		Pills:         sp.Pills,
+		HelpMessage:   string(dst), // dst will contain bytes of the help message
+		UserRepo: adapters.UserRepo{
+			Client: client,
+		},
 	}, nil
 }
 
@@ -87,33 +120,24 @@ func (b *Bot) handleMessage(up *objects.Update) {
 			return
 		}
 	case up.Message.Text == "/pill":
-		var dst []byte
-		_, err := parse(PILLS_ASSET, &dst)
-		if err != nil {
-			return
-		}
-
-		sp := SerializedPills{}
-		err = json.Unmarshal(dst, &sp)
-		if err != nil {
-			return
-		}
-		rand.Seed(time.Now().UnixNano())
-
-		randomIndex := makeTimestamp(len(sp.Pills))
-		_, err = b.Bot.SendMessage(
+		randomIndex := makeTimestamp(len(b.Pills))
+		_, err := b.Bot.SendMessage(
 			up.Message.Chat.Id,
-			sp.Pills[randomIndex].Title+": "+sp.Pills[randomIndex].Body, "Markdown", up.Message.MessageId, false, false)
+			b.Pills[randomIndex].Title+": "+b.Pills[randomIndex].Body, "Markdown", up.Message.MessageId, false, false)
+		if err != nil {
+			return
+		}
 	case up.Message.Text == "/help":
-		var dst []byte
-		_, err := parse(HELP_MESSAGE_ASSET, &dst)
+		_, err := b.Bot.SendMessage(up.Message.Chat.Id, string(b.HelpMessage), "Markdown", up.Message.MessageId, false, false)
 		if err != nil {
 			return
 		}
-		_, err = b.Bot.SendMessage(up.Message.Chat.Id, string(dst), "Markdown", up.Message.MessageId, false, false)
-		if err != nil {
-			return
-		}
+	case up.Message.Text == "/choose_tags":
+		log.Printf("Saving to db")
+
+		// TO CONTINUE, add tags to user
+		// b.UserRepo.AddTagsToUser()
+		log.Printf("Return operation exit")
 	}
 }
 

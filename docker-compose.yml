@@ -1,6 +1,31 @@
 version: "3.9"
 services:
+  mongo:
+    image: mongo:latest
+    container_name: server-mongodb
+    restart: always
+    networks:
+      - server-net
+    ports:
+      - "27017:27017"
+    expose:
+      - 27017
+    volumes:
+      - "mongo:/data/db"
+
   bot:
+    depends_on:
+      - "mongo"
+    networks:
+      - server-net
     build:
       context: .
       dockerfile: ./Dockerfile
+
+volumes:
+  mongo:
+    driver: local
+
+networks:
+  server-net:
+    driver: bridge
