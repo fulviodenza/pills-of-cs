@@ -3,9 +3,9 @@ module pills-of-cs
 go 1.19
 
 require (
-	github.com/SakoDroid/telego v1.8.0
+	github.com/SakoDroid/telego v1.8.0 // indirect
 	github.com/fulviodenza/pills-of-cs/bot v0.0.0-00010101000000-000000000000
-	github.com/jomei/notionapi v1.9.3
+	github.com/jomei/notionapi v1.9.3 // indirect
 	go.mongodb.org/mongo-driver v1.11.0
 )
 

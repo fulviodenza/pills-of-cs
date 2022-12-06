@@ -27,13 +27,13 @@ func main() {
 	}
 	defer func() {
 		if err = client.Disconnect(context.TODO()); err != nil {
-			log.Fatal("[client.Disconnect]: %v", err)
+			log.Fatalf("[client.Disconnect]: %v", err)
 			os.Exit(1)
 		}
 	}()
 
 	if err := client.Ping(context.TODO(), readpref.Primary()); err != nil {
-		log.Fatal("[client.Ping]: %v", err)
+		log.Fatalf("[client.Ping]: %v", err)
 		os.Exit(1)
 	}
 	fmt.Println("Successfully connected and pinged.")
@@ -44,6 +44,10 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Create the db and the collection
+	dbName := bot.UserRepo.Client.Database("pills").Collection("users")
+
+	log.Println(dbName)
 	err = bot.Bot.Run()
 	if err != nil {
 		log.Fatalf("[bot.Bot.Run]: %v", err)

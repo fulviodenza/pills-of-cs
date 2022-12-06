@@ -31,9 +31,10 @@ type Bot struct {
 	Cfg           cfg.BotConfigs
 	Bot           bt.Bot
 	NotionClient  notionapi.Client
-	Pills         []entities.Pill
 	HelpMessage   string
 	UserRepo      adapters.UserRepo
+	Pills         []entities.Pill
+	Categories    map[string][]entities.Pill
 }
 
 func NewBotWithConfig(client *mongo.Client) (*Bot, error) {
@@ -89,12 +90,19 @@ func NewBotWithConfig(client *mongo.Client) (*Bot, error) {
 
 	notion_client := notionapi.NewClient(notionapi.Token(notionToken))
 
+	categories := map[string][]entities.Pill{}
+	for _, p := range sp.Pills {
+		for _, category := range p.Tags {
+			categories[category] = []entities.Pill{p}
+		}
+	}
 	return &Bot{
 		TelegramToken: telegramToken,
 		Cfg:           bot_config,
 		Bot:           *b,
 		NotionClient:  *notion_client,
 		Pills:         sp.Pills,
+		Categories:    categories,
 		HelpMessage:   string(dst), // dst will contain bytes of the help message
 		UserRepo: adapters.UserRepo{
 			Client: client,
@@ -114,30 +122,56 @@ func (b *Bot) Start() error {
 
 func (b *Bot) handleMessage(up *objects.Update) {
 	switch {
-	case up.Message.Text == "/start":
+	case strings.Contains(up.Message.Text, "/start"):
 		_, err := b.Bot.SendMessage(up.Message.Chat.Id, "Welcome to the pills-of-cs bot! Press `/pill` to request a pill or `/help` to get informations about the bot", "Markdown", up.Message.MessageId, false, false)
 		if err != nil {
 			return
 		}
-	case up.Message.Text == "/pill":
-		randomIndex := makeTimestamp(len(b.Pills))
-		_, err := b.Bot.SendMessage(
+	case strings.Contains(up.Message.Text, "/pill"):
+		subscribedTags, err := b.UserRepo.GetTagsByUserId(up.Message.Chat.Id)
+		if subscribedTags == nil {
+			_, err := b.Bot.SendMessage(up.Message.Chat.Id, string(b.HelpMessage), "Markdown", up.Message.MessageId, false, false)
+			if err != nil {
+				return
+			}
+		}
+		randomCategory := makeTimestamp(len(subscribedTags.Categories))
+		randomIndex := makeTimestamp(len(b.Categories[subscribedTags.Categories[randomCategory]]))
+
+		_, err = b.Bot.SendMessage(
 			up.Message.Chat.Id,
-			b.Pills[randomIndex].Title+": "+b.Pills[randomIndex].Body, "Markdown", up.Message.MessageId, false, false)
+			b.Categories[subscribedTags.Categories[randomCategory]][randomIndex].Title+": "+b.Categories[subscribedTags.Categories[randomCategory]][randomIndex].Body, "Markdown", up.Message.MessageId, false, false)
 		if err != nil {
 			return
 		}
-	case up.Message.Text == "/help":
+	case strings.Contains(up.Message.Text, "/help"):
 		_, err := b.Bot.SendMessage(up.Message.Chat.Id, string(b.HelpMessage), "Markdown", up.Message.MessageId, false, false)
 		if err != nil {
 			return
 		}
-	case up.Message.Text == "/choose_tags":
-		log.Printf("Saving to db")
+	case strings.Contains(up.Message.Text, "/choose_tags"):
 
-		// TO CONTINUE, add tags to user
-		// b.UserRepo.AddTagsToUser()
+		// /cmd args[0] args[1]
+		args := strings.SplitN(up.Message.Text, " ", -1)
+
+		// Replacing the underscores with spaces in the arguments.
+		for i, a := range args {
+			if strings.Contains(a, "_") {
+				twoWordArg := strings.SplitN(a, "_", 2)
+				args[i] = twoWordArg[0] + " " + twoWordArg[1]
+			}
+		}
+
+		err := b.UserRepo.AddTagsToUser(up.Message.Chat.Id, args[1:])
+		if err != nil {
+			return
+		}
 		log.Printf("Return operation exit")
+		_, err = b.Bot.SendMessage(up.Message.Chat.Id, "tags updated", "Markdown", up.Message.MessageId, false, false)
+		if err != nil {
+			return
+		}
+
 	}
 }
 
