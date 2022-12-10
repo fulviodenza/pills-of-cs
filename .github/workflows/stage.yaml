@@ -49,7 +49,8 @@ jobs:
           envs: REGISTRY_HOST,{{ secrets.DIGITALOCEAN_ACCESS_TOKEN }},TELEGRAM_TOKEN,NOTION_TOKEN,GITHUB_SHA,IMAGE_NAME
           script: |
           
-            sudo apt -y update && sudo apt -y upgrade
+            sudo DEBIAN_FRONTEND=noninteractive apt-get -yq upgrade
+            sudo apt -y update && sudo apt upgrade
             sudo apt -y install docker-compose
             
             # Stop running container
