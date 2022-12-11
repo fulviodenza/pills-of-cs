@@ -49,9 +49,7 @@ jobs:
           envs: REGISTRY_HOST,{{ secrets.DIGITALOCEAN_ACCESS_TOKEN }},TELEGRAM_TOKEN,NOTION_TOKEN,GITHUB_SHA,IMAGE_NAME
           script: |
           
-            # Install docker and docker-compose
-            apt install curl apt-utils
-            curl -sSL https://get.docker.com/ | sudo sh
+            # Install docker-compose
             curl -L "https://github.com/docker/compose/releases/download/latest
             
             # Stop running container
