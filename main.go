@@ -20,21 +20,24 @@ const uri = "mongodb://localhost:27017/"
 
 func main() {
 
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(uri))
-	if err != nil {
-		log.Fatalf("[mongo.Connect]: %v", err)
-		os.Exit(1)
-	}
-	defer func() {
-		if err = client.Disconnect(context.TODO()); err != nil {
-			log.Fatalf("[client.Disconnect]: %v", err)
-			os.Exit(1)
+	var client *mongo.Client
+	for {
+		client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(uri))
+		if err != nil {
+			log.Fatalf("[mongo.Connect]: %v", err)
+			continue
 		}
-	}()
+		defer func() {
+			if err = client.Disconnect(context.TODO()); err != nil {
+				log.Fatalf("[client.Disconnect]: %v", err)
+			}
+		}()
 
-	if err := client.Ping(context.TODO(), readpref.Primary()); err != nil {
-		log.Fatalf("[client.Ping]: %v", err)
-		os.Exit(1)
+		if err := client.Ping(context.TODO(), readpref.Primary()); err != nil {
+			log.Fatalf("[client.Ping]: %v", err)
+			continue
+		}
+		break
 	}
 	fmt.Println("Successfully connected and pinged.")
 
