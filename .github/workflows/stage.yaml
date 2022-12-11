@@ -53,16 +53,16 @@ jobs:
             sudo apt -y install docker-compose
             
             # Stop running container
-            docker stop $(echo $IMAGE_NAME)
+            # docker stop $(echo $IMAGE_NAME)
 
             # Remove old container
-            docker rm $(echo $IMAGE_NAME)
+            # docker rm $(echo $IMAGE_NAME)
 
             # Run a new container from a new image
-            docker run -d \
-            --restart always \
-            --env TELEGRAM_TOKEN=$TELEGRAM_TOKEN \
-            --env NOTION_TOKEN=$NOTION_TOKEN \
-            --name $(echo $IMAGE_NAME) \
-            $(echo $REGISTRY_HOST)/$(echo $IMAGE_NAME):$(echo $GITHUB_SHA | head -c7) make start
+            # docker run -d \
+            # --restart always \
+            # --env TELEGRAM_TOKEN=$TELEGRAM_TOKEN \
+            # --env NOTION_TOKEN=$NOTION_TOKEN \
+            # --name $(echo $IMAGE_NAME) \
+            # $(echo $REGISTRY_HOST)/$(echo $IMAGE_NAME):$(echo $GITHUB_SHA | head -c7)
             
