@@ -49,9 +49,10 @@ jobs:
           envs: REGISTRY_HOST,{{ secrets.DIGITALOCEAN_ACCESS_TOKEN }},TELEGRAM_TOKEN,NOTION_TOKEN,GITHUB_SHA,IMAGE_NAME
           script: |
           
-            sudo DEBIAN_FRONTEND=noninteractive apt-get -yq upgrade
-            sudo apt -y update && sudo apt upgrade
-            sudo apt -y install docker-compose
+            # Install docker and docker-compose
+            apt install curl apt-utils
+            curl -sSL https://get.docker.com/ | sudo sh
+            curl -L "https://github.com/docker/compose/releases/download/latest
             
             # Stop running container
             docker stop $(echo $IMAGE_NAME)
