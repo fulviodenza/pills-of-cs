@@ -1,2 +1,2 @@
 start:
-	docker compose up -d
+	apt -y install docker && docker compose up -d
