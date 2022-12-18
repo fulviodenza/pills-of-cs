@@ -61,4 +61,3 @@ jobs:
             --env NOTION_TOKEN=$NOTION_TOKEN \
             --name $(echo $IMAGE_NAME) \
             $(echo $REGISTRY_HOST)/$(echo $IMAGE_NAME):$(echo $GITHUB_SHA | head -c7) make start
-            
