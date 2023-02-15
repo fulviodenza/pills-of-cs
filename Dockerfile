@@ -1,7 +1,3 @@
-FROM mongo
-
-EXPOSE 27017
-
 FROM golang:1.19-buster as builder
 
 # Create and change to the app directory.

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"log"
 	"os"
-	adapters "pills-of-cs/adapters/mongo"
+	adapters "pills-of-cs/adapters"
 	"pills-of-cs/entities"
 	"pills-of-cs/parser"
 	"strings"
@@ -14,6 +14,7 @@ import (
 	bt "github.com/SakoDroid/telego"
 	cfg "github.com/SakoDroid/telego/configs"
 	"github.com/SakoDroid/telego/objects"
+	"github.com/joho/godotenv"
 	"github.com/jomei/notionapi"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -62,6 +63,7 @@ func NewBotWithConfig(client *mongo.Client) (*Bot, error) {
 		return nil, err
 	}
 
+	err = godotenv.Load(".env")
 	// The function does not work?
 	// F*** off, I implement it by myself
 	for _, env := range os.Environ() {

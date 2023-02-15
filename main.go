@@ -1,15 +1,15 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
+	"pills-of-cs/adapters/ent"
+	"syscall"
 
 	pills_bot "github.com/fulviodenza/pills-of-cs/bot"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
 type Env struct {
@@ -21,25 +21,33 @@ const uri = "mongodb://localhost:27017/"
 func main() {
 
 	var client *mongo.Client
-	for {
-		client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(uri))
-		if err != nil {
-			log.Fatalf("[mongo.Connect]: %v", err)
-			continue
-		}
-		defer func() {
-			if err = client.Disconnect(context.TODO()); err != nil {
-				log.Fatalf("[client.Disconnect]: %v", err)
-			}
-		}()
+	var err error
 
-		if err := client.Ping(context.TODO(), readpref.Primary()); err != nil {
-			log.Fatalf("[client.Ping]: %v", err)
-			continue
+	for {
+
+		client, err := ent.SetupAndConnectDatabase(uri, "pills")
+		if err != nil {
+			log.Fatalf("[ent.SetupAndConnectDatabase]: %v", err)
 		}
+
+		// client, err = mongo.Connect(ctx, options.Client().ApplyURI(uri))
+		// if err != nil {
+		// 	log.Fatalf("[mongo.Connect]: %v", err)
+		// 	continue
+		// }
+		// defer func() {
+		// 	if err = client.Disconnect(ctx); err != nil {
+		// 		log.Fatalf("[client.Disconnect]: %v", err)
+		// 	}
+		// }()
+
+		// if err := client.Ping(ctx, readpref.Primary()); err != nil {
+		// 	log.Fatalf("[client.Ping]: %v", err)
+		// 	continue
+		// }
 		break
 	}
-	fmt.Println("Successfully connected and pinged.")
+	fmt.Println("BRUH: Successfully connected and pinged.")
 
 	bot, err := pills_bot.NewBotWithConfig(client)
 	if err != nil {
@@ -48,7 +56,7 @@ func main() {
 	}
 
 	// Create the db and the collection
-	dbName := bot.UserRepo.Client.Database("pills").Collection("users")
+	bot.UserRepo.Client = client
 
 	log.Println(dbName)
 	err = bot.Bot.Run()
@@ -58,4 +66,7 @@ func main() {
 	}
 
 	bot.Start()
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	<-sigCh
 }

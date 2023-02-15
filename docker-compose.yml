@@ -1,0 +1,27 @@
+version: "3.9"
+services:
+  db:
+    image: mongo
+    restart: always
+    platform: linux/x86_64
+    networks:
+      - app_network
+    ports:
+      - "27017:27017"
+    container_name: mongodb
+
+  api:
+    env_file:
+      - .env
+    networks:
+      - app_network
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - db
+
+networks:
+  app_network:
+volumes:
+  db:
