@@ -7,8 +7,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	pills_bot "github.com/fulviodenza/pills-of-cs/bot"
 	"github.com/pills-of-cs/adapters/ent"
+	"github.com/pills-of-cs/bot"
 )
 
 type Env struct {
@@ -27,7 +27,7 @@ func main() {
 		log.Fatalf("[ent.SetupAndConnectDatabase]: %v", err)
 	}
 
-	bot, err := pills_bot.NewBotWithConfig(client)
+	bot, err := bot.NewBotWithConfig(client)
 	if err != nil {
 		log.Fatalf("[NewBotWithConfig]: %v", err)
 		os.Exit(1)
