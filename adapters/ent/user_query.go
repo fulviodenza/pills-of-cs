@@ -6,8 +6,9 @@ import (
 	"context"
 	"fmt"
 	"math"
-	"pills-of-cs/adapters/ent/predicate"
-	"pills-of-cs/adapters/ent/user"
+	
+	"github.com/pills-of-cs/adapters/ent/predicate"
+	"github.com/pills-of-cs/adapters/ent/user"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"

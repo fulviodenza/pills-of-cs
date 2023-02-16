@@ -5,7 +5,7 @@ package ent
 import (
 	"context"
 	"fmt"
-	"pills-of-cs/adapters/ent/user"
+	"github.com/pills-of-cs/adapters/ent/user"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"

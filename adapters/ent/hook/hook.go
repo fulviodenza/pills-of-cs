@@ -5,7 +5,7 @@ package hook
 import (
 	"context"
 	"fmt"
-	"pills-of-cs/adapters/ent"
+	"github.com/pills-of-cs/adapters/ent"
 )
 
 // The UserFunc type is an adapter to allow the use of ordinary

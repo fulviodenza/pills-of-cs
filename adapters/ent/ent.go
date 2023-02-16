@@ -6,7 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"pills-of-cs/adapters/ent/user"
+	"github.com/pills-of-cs/adapters/ent/user"
 	"reflect"
 
 	"entgo.io/ent"

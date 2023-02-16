@@ -4,11 +4,11 @@ package enttest
 
 import (
 	"context"
-	"pills-of-cs/adapters/ent"
+	"github.com/pills-of-cs/adapters/ent"
 	// required by schema hooks.
-	_ "pills-of-cs/adapters/ent/runtime"
+	_ "github.com/pills-of-cs/adapters/ent/runtime"
 
-	"pills-of-cs/adapters/ent/migrate"
+	"github.com/pills-of-cs/adapters/ent/migrate"
 
 	"entgo.io/ent/dialect/sql/schema"
 )

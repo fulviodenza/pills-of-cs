@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"log"
 
-	"pills-of-cs/adapters/ent/migrate"
+	"github.com/pills-of-cs/adapters/ent/migrate"
 
-	"pills-of-cs/adapters/ent/user"
+	"github.com/pills-of-cs/adapters/ent/user"
 
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"

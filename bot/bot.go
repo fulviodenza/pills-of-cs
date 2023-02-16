@@ -1,22 +1,26 @@
 package bot
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"log"
 	"os"
-	adapters "pills-of-cs/adapters"
-	"pills-of-cs/entities"
-	"pills-of-cs/parser"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/pills-of-cs/adapters/ent"
+	repositories "github.com/pills-of-cs/adapters/repositories"
+	"github.com/pills-of-cs/parser"
+
+	"github.com/pills-of-cs/entities"
 
 	bt "github.com/SakoDroid/telego"
 	cfg "github.com/SakoDroid/telego/configs"
 	"github.com/SakoDroid/telego/objects"
 	"github.com/joho/godotenv"
 	"github.com/jomei/notionapi"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 const (
@@ -33,12 +37,12 @@ type Bot struct {
 	Bot           bt.Bot
 	NotionClient  notionapi.Client
 	HelpMessage   string
-	UserRepo      adapters.UserRepo
+	UserRepo      repositories.UserRepo
 	Pills         []entities.Pill
 	Categories    map[string][]entities.Pill
 }
 
-func NewBotWithConfig(client *mongo.Client) (*Bot, error) {
+func NewBotWithConfig(client *ent.Client) (*Bot, error) {
 
 	var (
 		telegramToken string
@@ -54,7 +58,7 @@ func NewBotWithConfig(client *mongo.Client) (*Bot, error) {
 	sp := entities.SerializedPills{}
 	err = json.Unmarshal(dst, &sp)
 	if err != nil {
-		return nil, errors.New(err.Error())
+		return nil, err
 	}
 
 	dst = []byte{}
@@ -64,6 +68,10 @@ func NewBotWithConfig(client *mongo.Client) (*Bot, error) {
 	}
 
 	err = godotenv.Load(".env")
+	if err != nil {
+		log.Fatalf("[godotenv.Load]: failed loading .env file: %v", err.Error())
+		return nil, err
+	}
 	// The function does not work?
 	// F*** off, I implement it by myself
 	for _, env := range os.Environ() {
@@ -106,23 +114,23 @@ func NewBotWithConfig(client *mongo.Client) (*Bot, error) {
 		Pills:         sp.Pills,
 		Categories:    categories,
 		HelpMessage:   string(dst), // dst will contain bytes of the help message
-		UserRepo: adapters.UserRepo{
+		UserRepo: repositories.UserRepo{
 			Client: client,
 		},
 	}, nil
 }
 
-func (b *Bot) Start() error {
+func (b *Bot) Start(ctx context.Context) error {
 	//Register the channel
 	messageChannel, _ := b.Bot.AdvancedMode().RegisterChannel("", "message")
 
 	for {
 		up := <-*messageChannel
-		b.handleMessage(up)
+		b.handleMessage(ctx, up)
 	}
 }
 
-func (b *Bot) handleMessage(up *objects.Update) {
+func (b *Bot) handleMessage(ctx context.Context, up *objects.Update) {
 	switch {
 	case strings.Contains(up.Message.Text, "/start"):
 		_, err := b.Bot.SendMessage(up.Message.Chat.Id, "Welcome to the pills-of-cs bot! Press `/pill` to request a pill or `/help` to get informations about the bot", "Markdown", up.Message.MessageId, false, false)
@@ -130,19 +138,23 @@ func (b *Bot) handleMessage(up *objects.Update) {
 			return
 		}
 	case strings.Contains(up.Message.Text, "/pill"):
-		subscribedTags, err := b.UserRepo.GetTagsByUserId(up.Message.Chat.Id)
+		subscribedTags, err := b.UserRepo.GetTagsByUserId(ctx, strconv.Itoa(up.Message.Chat.Id))
+		if err != nil {
+			log.Fatalf("[b.UserRepo.GetTagsByUserId]: failed getting tags: %v", err.Error())
+			return
+		}
 		if subscribedTags == nil {
 			_, err := b.Bot.SendMessage(up.Message.Chat.Id, string(b.HelpMessage), "Markdown", up.Message.MessageId, false, false)
 			if err != nil {
 				return
 			}
 		}
-		randomCategory := makeTimestamp(len(subscribedTags.Categories))
-		randomIndex := makeTimestamp(len(b.Categories[subscribedTags.Categories[randomCategory]]))
+		randomCategory := makeTimestamp(len(subscribedTags))
+		randomIndex := makeTimestamp(len(b.Categories[subscribedTags[randomCategory]]))
 
 		_, err = b.Bot.SendMessage(
 			up.Message.Chat.Id,
-			b.Categories[subscribedTags.Categories[randomCategory]][randomIndex].Title+": "+b.Categories[subscribedTags.Categories[randomCategory]][randomIndex].Body, "Markdown", up.Message.MessageId, false, false)
+			b.Categories[subscribedTags[randomCategory]][randomIndex].Title+": "+b.Categories[subscribedTags[randomCategory]][randomIndex].Body, "Markdown", up.Message.MessageId, false, false)
 		if err != nil {
 			return
 		}
@@ -164,7 +176,7 @@ func (b *Bot) handleMessage(up *objects.Update) {
 			}
 		}
 
-		err := b.UserRepo.AddTagsToUser(up.Message.Chat.Id, args[1:])
+		err := b.UserRepo.AddTagsToUser(ctx, strconv.Itoa(up.Message.Chat.Id), args[1:])
 		if err != nil {
 			return
 		}

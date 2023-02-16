@@ -3,7 +3,7 @@
 package user
 
 import (
-	"pills-of-cs/adapters/ent/predicate"
+	"github.com/pills-of-cs/adapters/ent/predicate"
 
 	"entgo.io/ent/dialect/sql"
 )

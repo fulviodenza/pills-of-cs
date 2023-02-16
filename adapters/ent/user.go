@@ -5,7 +5,7 @@ package ent
 import (
 	"encoding/json"
 	"fmt"
-	"pills-of-cs/adapters/ent/user"
+	"github.com/pills-of-cs/adapters/ent/user"
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
