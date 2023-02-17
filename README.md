@@ -4,10 +4,13 @@ a telegram bot to retrieve pills of computer science and give a look at my noteb
 
 # commands
 
-commands available for this bot, for now are only 2:
+commands available for this bot, for now are:
 
-- `/start`: to start the bot
-- `/pill`: to get a pill from my notebook
+- `/help`: to get help;
+- `/start`: to start the bot;
+- `/pill`: to get a pill from my notebook;
+- `/get_tags`: to get available tags to subscribe to;
+- `/choose_tag [tag]`: to get subscribed to a specific tag;
 
 # next features
 
