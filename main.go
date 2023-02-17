@@ -7,27 +7,15 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/pills-of-cs/adapters/ent"
 	"github.com/pills-of-cs/bot"
 )
-
-type Env struct {
-	TelegramToken string `json:"TELEGRAM_TOKEN"`
-}
-
-const uri = "postgresql://postgres:changeme@postgres:5432/pills?sslmode=disable"
 
 func main() {
 
 	var err error
 	ctx := context.Background()
 
-	client, err := ent.SetupAndConnectDatabase(uri)
-	if err != nil {
-		log.Fatalf("[ent.SetupAndConnectDatabase]: %v", err)
-	}
-
-	bot, err := bot.NewBotWithConfig(client)
+	bot, client, err := bot.NewBotWithConfig()
 	if err != nil {
 		log.Fatalf("[NewBotWithConfig]: %v", err)
 		os.Exit(1)

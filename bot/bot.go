@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -24,6 +25,7 @@ import (
 const (
 	NOTION_TOKEN       = "NOTION_TOKEN"
 	TELEGRAM_TOKEN     = "TELEGRAM_TOKEN"
+	DB_URI             = "DB_URI"
 	PAGE_ID            = "48b530629463419ca92e22cc6ef50dab"
 	PILLS_ASSET        = "./assets/pills.json"
 	HELP_MESSAGE_ASSET = "./assets/help_message.txt"
@@ -37,34 +39,35 @@ type Bot struct {
 // if the interface will not be followed, this will not compile
 var _ entities.IBot = (*Bot)(nil)
 
-func NewBotWithConfig(client *ent.Client) (*Bot, error) {
+func NewBotWithConfig() (*Bot, *ent.Client, error) {
 	var (
 		telegramToken string
 		notionToken   string
+		dbUri         string
 	)
 
 	var dst []byte
 	_, err := parser.Parse(PILLS_ASSET, &dst)
 	if err != nil {
-		return nil, errors.New(err.Error())
+		return nil, nil, errors.New(err.Error())
 	}
 
 	sp := entities.SerializedPills{}
 	err = json.Unmarshal(dst, &sp)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	dst = []byte{}
 	_, err = parser.Parse(HELP_MESSAGE_ASSET, &dst)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	err = godotenv.Load(".env")
 	if err != nil {
 		log.Fatalf("[godotenv.Load]: failed loading .env file: %v", err.Error())
-		return nil, err
+		return nil, nil, err
 	}
 	// The function does not work?
 	// F*** off, I implement it by myself
@@ -76,8 +79,18 @@ func NewBotWithConfig(client *ent.Client) (*Bot, error) {
 		if pair[0] == NOTION_TOKEN {
 			notionToken = pair[1]
 		}
+		if pair[0] == DB_URI {
+			dbUri = pair[1]
+		}
 	}
 
+	client, err := ent.SetupAndConnectDatabase(dbUri)
+	fmt.Println(client)
+	if err != nil {
+		log.Fatalf("[ent.SetupAndConnectDatabase]: error in db setup or connection: %v", err.Error())
+	}
+
+	// Configure telegram bot
 	cf := cfg.DefaultUpdateConfigs()
 
 	bot_config := cfg.BotConfigs{
@@ -89,8 +102,9 @@ func NewBotWithConfig(client *ent.Client) (*Bot, error) {
 
 	b, err := bt.NewBot(&bot_config)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+	// end telegram configuration
 
 	notion_client := notionapi.NewClient(notionapi.Token(notionToken))
 
@@ -108,12 +122,12 @@ func NewBotWithConfig(client *ent.Client) (*Bot, error) {
 			NotionClient:  *notion_client,
 			Pills:         sp.Pills,
 			Categories:    categories,
-			HelpMessage:   string(dst), // dst will contain bytes of the help message
+			HelpMessage:   string(dst),
 			UserRepo: repositories.UserRepo{
 				Client: client,
 			},
 		},
-	}, nil
+	}, client, err
 }
 
 func (b Bot) Start(ctx context.Context) error {

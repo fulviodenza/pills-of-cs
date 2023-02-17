@@ -19,6 +19,7 @@ type BotConf struct {
 	UserRepo      repositories.UserRepo
 	Pills         []Pill
 	Categories    map[string][]Pill
+	DbUri         string
 }
 
 type IBot interface {
