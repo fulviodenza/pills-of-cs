@@ -1,29 +1,31 @@
 version: "3.9"
 services:
-  db:
+  postgres:
     image: postgres
     restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: changeme
+      POSTGRES_DB: pills
+    volumes:
+       - postgres:/data/postgres
     networks:
       - app_network
-    ports:
-      - "5434:5432"
-    container_name: postgresdb
+    container_name: postgres
 
   api:
     env_file:
       - .env
     networks:
       - app_network
+    restart: unless-stopped
     build:
       context: .
       dockerfile: Dockerfile
     depends_on:
-      - db
+      - postgres
 
 networks:
   app_network:
 volumes:
-  db:
+  postgres:
