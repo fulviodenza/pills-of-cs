@@ -71,6 +71,8 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 	}
 	// The function does not work?
 	// F*** off, I implement it by myself
+	//
+	// get environment variables from env
 	for _, env := range os.Environ() {
 		pair := strings.SplitN(env, "=", 2)
 		if pair[0] == TELEGRAM_TOKEN {
@@ -84,6 +86,7 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 		}
 	}
 
+	// connect to database with the env db uri
 	client, err := ent.SetupAndConnectDatabase(dbUri)
 	fmt.Println(client)
 	if err != nil {
