@@ -1,17 +1,13 @@
-FROM golang:1.19-buster as builder
+FROM golang:1.19.5 as builder
 
 # Create and change to the app directory.
 WORKDIR /app
 
-# Retrieve application dependencies.
-# This allows the container build to reuse cached dependencies.
-# Expecting to copy go.mod and if present go.sum.
-COPY go.* ./
+COPY go.mod ./
+COPY go.sum ./
 
-# Copy local code to the container image.
-COPY . ./
+COPY *.go ./
 
-RUN go mod vendor
-RUN go install ./...
-RUN go build -o server
-CMD ["./server"]
+RUN go build -o /pills-of-cs
+
+CMD [ "/pills-of-cs" ]

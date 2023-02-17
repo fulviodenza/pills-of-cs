@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
@@ -149,15 +150,32 @@ func (b *Bot) handleMessage(ctx context.Context, up *objects.Update) {
 				return
 			}
 		}
-		randomCategory := makeTimestamp(len(subscribedTags))
-		randomIndex := makeTimestamp(len(b.Categories[subscribedTags[randomCategory]]))
 
-		_, err = b.Bot.SendMessage(
-			up.Message.Chat.Id,
-			b.Categories[subscribedTags[randomCategory]][randomIndex].Title+": "+b.Categories[subscribedTags[randomCategory]][randomIndex].Body, "Markdown", up.Message.MessageId, false, false)
-		if err != nil {
-			return
+		var randomCategory, randomIndex int64
+		var randomCategoryP []entities.Pill
+		rand.Seed(time.Now().Unix())
+
+		if len(subscribedTags) > 0 {
+			randomCategory = makeTimestamp(len(subscribedTags))
+			randomIndex = makeTimestamp(len(b.Categories[subscribedTags[randomCategory]]))
+			_, err = b.Bot.SendMessage(
+				up.Message.Chat.Id,
+				b.Categories[subscribedTags[randomCategory]][randomIndex].Title+": "+b.Categories[subscribedTags[randomCategory]][randomIndex].Body, "Markdown", up.Message.MessageId, false, false)
+			if err != nil {
+				return
+			}
+		} else {
+			randomCategoryP = pick(b.Categories)
+			randomIndex = makeTimestamp(len(randomCategoryP))
+			_, err = b.Bot.SendMessage(
+				up.Message.Chat.Id,
+				randomCategoryP[randomIndex].Title+": "+randomCategoryP[randomIndex].Body, "Markdown", up.Message.MessageId, false, false)
+			if err != nil {
+				return
+			}
+
 		}
+
 	case strings.Contains(up.Message.Text, "/help"):
 		_, err := b.Bot.SendMessage(up.Message.Chat.Id, string(b.HelpMessage), "Markdown", up.Message.MessageId, false, false)
 		if err != nil {
@@ -190,5 +208,19 @@ func (b *Bot) handleMessage(ctx context.Context, up *objects.Update) {
 }
 
 func makeTimestamp(len int) int64 {
-	return (time.Now().UnixNano() / int64(time.Millisecond)) % int64(len)
+	millisec := int64(time.Millisecond)
+	now := time.Now().UnixNano()
+	division := now / millisec
+	return (division) % int64(len)
+}
+
+func pick[K comparable, V any](m map[K]V) V {
+	k := rand.Intn(len(m))
+	for _, x := range m {
+		if k == 0 {
+			return x
+		}
+		k--
+	}
+	panic("unreachable")
 }

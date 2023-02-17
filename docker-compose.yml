@@ -1,25 +1,27 @@
 version: "3.9"
 services:
   db:
-    image: mongo
+    image: postgres
     restart: always
-    platform: linux/x86_64
-    networks:
-      - app_network
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: changeme
+    # networks:
+    #   - app_network
     ports:
-      - "27017:27017"
-    container_name: mongodb
+      - "5434:5432"
+    container_name: postgresdb
 
-  api:
-    env_file:
-      - .env
-    networks:
-      - app_network
-    build:
-      context: .
-      dockerfile: Dockerfile
-    depends_on:
-      - db
+  # api:
+  #   env_file:
+  #     - .env
+  #   networks:
+  #     - app_network
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   depends_on:
+  #     - db
 
 networks:
   app_network:

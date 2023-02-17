@@ -14,7 +14,7 @@ type User struct {
 func (User) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("id").StorageKey("user_id"),
-		field.Strings("categories").Optional(),
+		field.JSON("categories", []string{}).Optional(),
 	}
 }
 

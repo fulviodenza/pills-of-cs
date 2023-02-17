@@ -15,14 +15,14 @@ type Env struct {
 	TelegramToken string `json:"TELEGRAM_TOKEN"`
 }
 
-const uri = "mongodb://localhost:27017/"
+const uri = "postgresql://postgres:changeme@localhost:5434/pills?sslmode=disable"
 
 func main() {
 
 	var err error
-	var ctx context.Context
+	ctx := context.Background()
 
-	client, err := ent.SetupAndConnectDatabase(uri, "pills")
+	client, err := ent.SetupAndConnectDatabase(uri)
 	if err != nil {
 		log.Fatalf("[ent.SetupAndConnectDatabase]: %v", err)
 	}
