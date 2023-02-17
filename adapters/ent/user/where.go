@@ -3,9 +3,8 @@
 package user
 
 import (
-	"github.com/pills-of-cs/adapters/ent/predicate"
-
 	"entgo.io/ent/dialect/sql"
+	"github.com/pills-of-cs/adapters/ent/predicate"
 )
 
 // ID filters vertices based on their ID field.

@@ -2,7 +2,7 @@
 
 package runtime
 
-// The schema-stitching logic is generated in pills-of-cs/adapters/ent/runtime.go
+// The schema-stitching logic is generated in github.com/pills-of-cs/adapters/ent/runtime.go
 
 const (
 	Version = "v0.11.8"                                         // Version of ent codegen.

@@ -36,8 +36,10 @@ func (ur *UserRepo) AddTagsToUser(ctx context.Context, id string, topics []strin
 	}
 
 	toAdd := findCategoriesToAdd(topics, user.Categories)
+	user.Categories = append(user.Categories, toAdd...)
+
 	if toAdd != nil {
-		err = ur.Client.User.Update().AppendCategories(toAdd).Exec(ctx)
+		err = ur.Client.User.Update().SetCategories(user.Categories).Exec(ctx)
 		if err != nil {
 			log.Fatalf("[ur.Client.User.Update]: error executing the query: %v", err)
 			return err

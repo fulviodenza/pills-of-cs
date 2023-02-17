@@ -6,12 +6,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/pills-of-cs/adapters/ent/user"
 	"reflect"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/pills-of-cs/adapters/ent/user"
 )
 
 // ent aliases to avoid import conflicts in user's code.

@@ -6,13 +6,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/pills-of-cs/adapters/ent/predicate"
-	"github.com/pills-of-cs/adapters/ent/user"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
+	"github.com/pills-of-cs/adapters/ent/predicate"
+	"github.com/pills-of-cs/adapters/ent/user"
 )
 
 // UserUpdate is the builder for updating User entities.

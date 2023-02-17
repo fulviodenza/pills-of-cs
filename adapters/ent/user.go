@@ -5,10 +5,10 @@ package ent
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/pills-of-cs/adapters/ent/user"
 	"strings"
 
 	"entgo.io/ent/dialect/sql"
+	"github.com/pills-of-cs/adapters/ent/user"
 )
 
 // User is the model entity for the User schema.

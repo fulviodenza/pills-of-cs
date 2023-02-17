@@ -7,8 +7,10 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: changeme
       POSTGRES_DB: pills
+    ports:
+      - 5434:5432
     volumes:
-       - postgres:/data/postgres
+      - postgres:/data/postgres
     networks:
       - app_network
     container_name: postgres

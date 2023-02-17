@@ -6,9 +6,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
+
 	"github.com/pills-of-cs/adapters/ent/predicate"
 	"github.com/pills-of-cs/adapters/ent/user"
-	"sync"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
