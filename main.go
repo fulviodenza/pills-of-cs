@@ -15,7 +15,7 @@ type Env struct {
 	TelegramToken string `json:"TELEGRAM_TOKEN"`
 }
 
-const uri = "postgresql://postgres:changeme@localhost:5434/pills?sslmode=disable"
+const uri = "postgresql://postgres:changeme@postgres:5432/pills?sslmode=disable"
 
 func main() {
 
