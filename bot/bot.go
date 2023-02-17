@@ -33,18 +33,14 @@ const (
 )
 
 type Bot struct {
-	TelegramToken string
-	Cfg           cfg.BotConfigs
-	Bot           bt.Bot
-	NotionClient  notionapi.Client
-	HelpMessage   string
-	UserRepo      repositories.UserRepo
-	Pills         []entities.Pill
-	Categories    map[string][]entities.Pill
+	*entities.BotConf
 }
 
-func NewBotWithConfig(client *ent.Client) (*Bot, error) {
+// this cast force us to follow the given interface
+// if the interface will not be followed, this will not compile
+var _ entities.IBot = (*Bot)(nil)
 
+func NewBotWithConfig(client *ent.Client) (*Bot, error) {
 	var (
 		telegramToken string
 		notionToken   string
@@ -108,44 +104,42 @@ func NewBotWithConfig(client *ent.Client) (*Bot, error) {
 		}
 	}
 	return &Bot{
-		TelegramToken: telegramToken,
-		Cfg:           bot_config,
-		Bot:           *b,
-		NotionClient:  *notion_client,
-		Pills:         sp.Pills,
-		Categories:    categories,
-		HelpMessage:   string(dst), // dst will contain bytes of the help message
-		UserRepo: repositories.UserRepo{
-			Client: client,
+		&entities.BotConf{
+			TelegramToken: telegramToken,
+			Cfg:           bot_config,
+			Bot:           *b,
+			NotionClient:  *notion_client,
+			Pills:         sp.Pills,
+			Categories:    categories,
+			HelpMessage:   string(dst), // dst will contain bytes of the help message
+			UserRepo: repositories.UserRepo{
+				Client: client,
+			},
 		},
 	}, nil
 }
 
-func (b *Bot) Start(ctx context.Context) error {
+func (b Bot) Start(ctx context.Context) error {
 	//Register the channel
 	messageChannel, _ := b.Bot.AdvancedMode().RegisterChannel("", "message")
 
 	for {
 		up := <-*messageChannel
-		b.handleMessage(ctx, up)
+		b.HandleMessage(ctx, up)
 	}
 }
 
-func (b *Bot) handleMessage(ctx context.Context, up *objects.Update) {
+func (ba Bot) HandleMessage(ctx context.Context, up *objects.Update) {
 	switch {
 	case strings.Contains(up.Message.Text, "/start"):
-		_, err := b.Bot.SendMessage(up.Message.Chat.Id, "Welcome to the pills-of-cs bot! Press `/pill` to request a pill or `/help` to get informations about the bot", "Markdown", up.Message.MessageId, false, false)
-		if err != nil {
-			return
-		}
 	case strings.Contains(up.Message.Text, "/pill"):
-		subscribedTags, err := b.UserRepo.GetTagsByUserId(ctx, strconv.Itoa(up.Message.Chat.Id))
+		subscribedTags, err := ba.UserRepo.GetTagsByUserId(ctx, strconv.Itoa(up.Message.Chat.Id))
 		if err != nil {
 			log.Fatalf("[b.UserRepo.GetTagsByUserId]: failed getting tags: %v", err.Error())
 			return
 		}
 		if subscribedTags == nil {
-			_, err := b.Bot.SendMessage(up.Message.Chat.Id, string(b.HelpMessage), "Markdown", up.Message.MessageId, false, false)
+			_, err := ba.Bot.SendMessage(up.Message.Chat.Id, string(ba.HelpMessage), "Markdown", up.Message.MessageId, false, false)
 			if err != nil {
 				return
 			}
@@ -157,17 +151,17 @@ func (b *Bot) handleMessage(ctx context.Context, up *objects.Update) {
 
 		if len(subscribedTags) > 0 {
 			randomCategory = makeTimestamp(len(subscribedTags))
-			randomIndex = makeTimestamp(len(b.Categories[subscribedTags[randomCategory]]))
-			_, err = b.Bot.SendMessage(
+			randomIndex = makeTimestamp(len(ba.Categories[subscribedTags[randomCategory]]))
+			_, err = ba.Bot.SendMessage(
 				up.Message.Chat.Id,
-				b.Categories[subscribedTags[randomCategory]][randomIndex].Title+": "+b.Categories[subscribedTags[randomCategory]][randomIndex].Body, "Markdown", up.Message.MessageId, false, false)
+				ba.Categories[subscribedTags[randomCategory]][randomIndex].Title+": "+ba.Categories[subscribedTags[randomCategory]][randomIndex].Body, "Markdown", up.Message.MessageId, false, false)
 			if err != nil {
 				return
 			}
 		} else {
-			randomCategoryP = pick(b.Categories)
+			randomCategoryP = pick(ba.Categories)
 			randomIndex = makeTimestamp(len(randomCategoryP))
-			_, err = b.Bot.SendMessage(
+			_, err = ba.Bot.SendMessage(
 				up.Message.Chat.Id,
 				randomCategoryP[randomIndex].Title+": "+randomCategoryP[randomIndex].Body, "Markdown", up.Message.MessageId, false, false)
 			if err != nil {
@@ -177,7 +171,7 @@ func (b *Bot) handleMessage(ctx context.Context, up *objects.Update) {
 		}
 
 	case strings.Contains(up.Message.Text, "/help"):
-		_, err := b.Bot.SendMessage(up.Message.Chat.Id, string(b.HelpMessage), "Markdown", up.Message.MessageId, false, false)
+		_, err := ba.Bot.SendMessage(up.Message.Chat.Id, string(ba.HelpMessage), "Markdown", up.Message.MessageId, false, false)
 		if err != nil {
 			return
 		}
@@ -194,21 +188,22 @@ func (b *Bot) handleMessage(ctx context.Context, up *objects.Update) {
 			}
 		}
 
-		err := b.UserRepo.AddTagsToUser(ctx, strconv.Itoa(up.Message.Chat.Id), args[1:])
+		err := ba.UserRepo.AddTagsToUser(ctx, strconv.Itoa(up.Message.Chat.Id), args[1:])
 		if err != nil {
 			return
 		}
+
 		log.Printf("Return operation exit")
-		_, err = b.Bot.SendMessage(up.Message.Chat.Id, "tags updated", "Markdown", up.Message.MessageId, false, false)
+		_, err = ba.Bot.SendMessage(up.Message.Chat.Id, "tags updated", "Markdown", up.Message.MessageId, false, false)
 		if err != nil {
 			return
 		}
 	case strings.Contains(up.Message.Text, "/get_tags"):
 		msg := ""
-		for k := range b.Categories {
+		for k := range ba.Categories {
 			msg += "- " + k + "\n"
 		}
-		_, err := b.Bot.SendMessage(up.Message.Chat.Id, msg, "Markdown", up.Message.MessageId, false, false)
+		_, err := ba.Bot.SendMessage(up.Message.Chat.Id, msg, "Markdown", up.Message.MessageId, false, false)
 		if err != nil {
 			return
 		}
