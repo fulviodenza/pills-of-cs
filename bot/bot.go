@@ -203,7 +203,15 @@ func (b *Bot) handleMessage(ctx context.Context, up *objects.Update) {
 		if err != nil {
 			return
 		}
-
+	case strings.Contains(up.Message.Text, "/get_tags"):
+		msg := ""
+		for k := range b.Categories {
+			msg += "- " + k + "\n"
+		}
+		_, err := b.Bot.SendMessage(up.Message.Chat.Id, msg, "Markdown", up.Message.MessageId, false, false)
+		if err != nil {
+			return
+		}
 	}
 }
 
