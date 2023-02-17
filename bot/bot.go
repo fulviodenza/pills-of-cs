@@ -5,11 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
-	"math/rand"
 	"os"
-	"strconv"
 	"strings"
-	"time"
 
 	"github.com/pills-of-cs/adapters/ent"
 	repositories "github.com/pills-of-cs/adapters/repositories"
@@ -132,98 +129,14 @@ func (b Bot) Start(ctx context.Context) error {
 func (ba Bot) HandleMessage(ctx context.Context, up *objects.Update) {
 	switch {
 	case strings.Contains(up.Message.Text, "/start"):
+		ba.start(ctx, up)
 	case strings.Contains(up.Message.Text, "/pill"):
-		subscribedTags, err := ba.UserRepo.GetTagsByUserId(ctx, strconv.Itoa(up.Message.Chat.Id))
-		if err != nil {
-			log.Fatalf("[b.UserRepo.GetTagsByUserId]: failed getting tags: %v", err.Error())
-			return
-		}
-		if subscribedTags == nil {
-			_, err := ba.Bot.SendMessage(up.Message.Chat.Id, string(ba.HelpMessage), "Markdown", up.Message.MessageId, false, false)
-			if err != nil {
-				return
-			}
-		}
-
-		var randomCategory, randomIndex int64
-		var randomCategoryP []entities.Pill
-		rand.Seed(time.Now().Unix())
-
-		if len(subscribedTags) > 0 {
-			randomCategory = makeTimestamp(len(subscribedTags))
-			randomIndex = makeTimestamp(len(ba.Categories[subscribedTags[randomCategory]]))
-			_, err = ba.Bot.SendMessage(
-				up.Message.Chat.Id,
-				ba.Categories[subscribedTags[randomCategory]][randomIndex].Title+": "+ba.Categories[subscribedTags[randomCategory]][randomIndex].Body, "Markdown", up.Message.MessageId, false, false)
-			if err != nil {
-				return
-			}
-		} else {
-			randomCategoryP = pick(ba.Categories)
-			randomIndex = makeTimestamp(len(randomCategoryP))
-			_, err = ba.Bot.SendMessage(
-				up.Message.Chat.Id,
-				randomCategoryP[randomIndex].Title+": "+randomCategoryP[randomIndex].Body, "Markdown", up.Message.MessageId, false, false)
-			if err != nil {
-				return
-			}
-
-		}
-
+		ba.pill(ctx, up)
 	case strings.Contains(up.Message.Text, "/help"):
-		_, err := ba.Bot.SendMessage(up.Message.Chat.Id, string(ba.HelpMessage), "Markdown", up.Message.MessageId, false, false)
-		if err != nil {
-			return
-		}
+		ba.help(ctx, up)
 	case strings.Contains(up.Message.Text, "/choose_tags"):
-
-		// /cmd args[0] args[1]
-		args := strings.SplitN(up.Message.Text, " ", -1)
-
-		// Replacing the underscores with spaces in the arguments.
-		for i, a := range args {
-			if strings.Contains(a, "_") {
-				twoWordArg := strings.SplitN(a, "_", 2)
-				args[i] = twoWordArg[0] + " " + twoWordArg[1]
-			}
-		}
-
-		err := ba.UserRepo.AddTagsToUser(ctx, strconv.Itoa(up.Message.Chat.Id), args[1:])
-		if err != nil {
-			return
-		}
-
-		log.Printf("Return operation exit")
-		_, err = ba.Bot.SendMessage(up.Message.Chat.Id, "tags updated", "Markdown", up.Message.MessageId, false, false)
-		if err != nil {
-			return
-		}
+		ba.chooseTags(ctx, up)
 	case strings.Contains(up.Message.Text, "/get_tags"):
-		msg := ""
-		for k := range ba.Categories {
-			msg += "- " + k + "\n"
-		}
-		_, err := ba.Bot.SendMessage(up.Message.Chat.Id, msg, "Markdown", up.Message.MessageId, false, false)
-		if err != nil {
-			return
-		}
+		ba.getTags(ctx, up)
 	}
-}
-
-func makeTimestamp(len int) int64 {
-	millisec := int64(time.Millisecond)
-	now := time.Now().UnixNano()
-	division := now / millisec
-	return (division) % int64(len)
-}
-
-func pick[K comparable, V any](m map[K]V) V {
-	k := rand.Intn(len(m))
-	for _, x := range m {
-		if k == 0 {
-			return x
-		}
-		k--
-	}
-	panic("unreachable")
 }
