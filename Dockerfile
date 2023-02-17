@@ -8,6 +8,6 @@ COPY go.sum ./
 
 COPY *.go ./
 
-RUN go build -o /pills-of-cs
+RUN go build -o /pills
 
-CMD [ "/pills-of-cs" ]
+CMD [ "/pills" ]
