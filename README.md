@@ -13,5 +13,5 @@ commands available for this bot, for now are only 2:
 
 - [x] `/help`: to retrieve available commands (05/12/2022)
 - [ ] `/schedule_pill`: to schedule pills
-- [ ] `/choose_tags`: to receive only pills about a specific tag/category
+- [x] `/choose_tags`: to receive only pills about a specific tag/category
 - [ ] `/set_news`: to start receiving news
