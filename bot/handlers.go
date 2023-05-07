@@ -56,9 +56,7 @@ func (ba Bot) pill(ctx context.Context, up *objects.Update) {
 		if err != nil {
 			return
 		}
-
 	}
-
 }
 
 func (ba Bot) help(ctx context.Context, up *objects.Update) {

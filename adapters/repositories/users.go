@@ -14,7 +14,7 @@ type UserRepo struct {
 
 func (ur *UserRepo) AddTagsToUser(ctx context.Context, id string, topics []string) error {
 
-	user, err := ur.User.Query().
+	userEl, err := ur.User.Query().
 		Where(user.IDEQ(id)).
 		First(ctx)
 	if _, ok := err.(*ent.NotFoundError); ok {
@@ -35,11 +35,12 @@ func (ur *UserRepo) AddTagsToUser(ctx context.Context, id string, topics []strin
 		}
 	}
 
-	toAdd := findCategoriesToAdd(topics, user.Categories)
-	user.Categories = append(user.Categories, toAdd...)
+	toAdd := findCategoriesToAdd(topics, userEl.Categories)
+	userEl.Categories = append(userEl.Categories, toAdd...)
 
 	if toAdd != nil {
-		err = ur.User.Update().SetCategories(user.Categories).Exec(ctx)
+		err = ur.User.Update().SetCategories(userEl.Categories).Where(user.IDEQ(userEl.ID)).Exec(ctx)
+
 		if err != nil {
 			log.Fatalf("[ur.User.Update]: error executing the query: %v", err)
 			return err
