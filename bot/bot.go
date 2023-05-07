@@ -18,7 +18,6 @@ import (
 	bt "github.com/SakoDroid/telego"
 	cfg "github.com/SakoDroid/telego/configs"
 	"github.com/SakoDroid/telego/objects"
-	"github.com/joho/godotenv"
 	"github.com/jomei/notionapi"
 )
 
@@ -64,11 +63,6 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 		return nil, nil, err
 	}
 
-	err = godotenv.Load(".env")
-	if err != nil {
-		log.Fatalf("[godotenv.Load]: failed loading .env file: %v", err.Error())
-		return nil, nil, err
-	}
 	// The function does not work?
 	// F*** off, I implement it by myself
 	//
