@@ -9,28 +9,28 @@ import (
 )
 
 type UserRepo struct {
-	Client *ent.Client
+	*ent.Client
 }
 
 func (ur *UserRepo) AddTagsToUser(ctx context.Context, id string, topics []string) error {
 
-	user, err := ur.Client.User.Query().
+	user, err := ur.User.Query().
 		Where(user.IDEQ(id)).
 		First(ctx)
 	if _, ok := err.(*ent.NotFoundError); ok {
 
-		err = ur.Client.User.Create().
+		err = ur.User.Create().
 			SetID(id).
 			SetCategories(topics).
 			Exec(ctx)
 		if err != nil {
-			log.Fatalf("[ur.Client.User.Create]: error executing the query: %v", err)
+			log.Fatalf("[ur.User.Create]: error executing the query: %v", err)
 			return err
 		}
 	}
 	if err != nil {
 		if _, ok := err.(*ent.NotFoundError); !ok {
-			log.Fatalf("[ur.Client.User.Create]: error executing the query: %v", err)
+			log.Fatalf("[ur.User.Create]: error executing the query: %v", err)
 			return err
 		}
 	}
@@ -39,9 +39,9 @@ func (ur *UserRepo) AddTagsToUser(ctx context.Context, id string, topics []strin
 	user.Categories = append(user.Categories, toAdd...)
 
 	if toAdd != nil {
-		err = ur.Client.User.Update().SetCategories(user.Categories).Exec(ctx)
+		err = ur.User.Update().SetCategories(user.Categories).Exec(ctx)
 		if err != nil {
-			log.Fatalf("[ur.Client.User.Update]: error executing the query: %v", err)
+			log.Fatalf("[ur.User.Update]: error executing the query: %v", err)
 			return err
 		}
 	}
@@ -50,7 +50,7 @@ func (ur *UserRepo) AddTagsToUser(ctx context.Context, id string, topics []strin
 }
 
 func (ur *UserRepo) GetTagsByUserId(ctx context.Context, id string) ([]string, error) {
-	exists, err := ur.Client.User.Query().
+	exists, err := ur.User.Query().
 		Where(user.IDEQ(id)).Exist(ctx)
 	if err != nil {
 		return nil, err

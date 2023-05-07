@@ -24,10 +24,20 @@ import (
 const (
 	NOTION_TOKEN       = "NOTION_TOKEN"
 	TELEGRAM_TOKEN     = "TELEGRAM_TOKEN"
-	DB_URI             = "DB_URI"
 	PAGE_ID            = "48b530629463419ca92e22cc6ef50dab"
 	PILLS_ASSET        = "./assets/pills.json"
 	HELP_MESSAGE_ASSET = "./assets/help_message.txt"
+)
+
+var databaseUrl, pgUser, pgPwd, pgPort, pgHost, phPort, pgDatabase, telegramToken string
+
+const (
+	DATABASE_URL = "DATABASE_URL"
+	PG_USER      = "PGUSER"
+	PG_PWD       = "PGPASSWORD"
+	PG_HOST      = "PGHOST"
+	PG_PORT      = "PGPORT"
+	PG_DATABASE  = "PGDATABASE"
 )
 
 type Bot struct {
@@ -40,9 +50,8 @@ var _ entities.IBot = (*Bot)(nil)
 
 func NewBotWithConfig() (*Bot, *ent.Client, error) {
 	var (
-		telegramToken string
-		notionToken   string
-		dbUri         string
+		notionToken string
+		dbUri       string
 	)
 
 	var dst []byte
@@ -63,22 +72,9 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 		return nil, nil, err
 	}
 
-	// The function does not work?
-	// F*** off, I implement it by myself
-	//
-	// get environment variables from env
-	for _, env := range os.Environ() {
-		pair := strings.SplitN(env, "=", 2)
-		if pair[0] == TELEGRAM_TOKEN {
-			telegramToken = pair[1]
-		}
-		if pair[0] == NOTION_TOKEN {
-			notionToken = pair[1]
-		}
-		if pair[0] == DB_URI {
-			dbUri = pair[1]
-		}
-	}
+	load()
+
+	dbUri = databaseUrl + "://" + pgUser + ":" + pgPwd + "@" + pgHost + ":" + pgPort + "/" + pgDatabase
 
 	// connect to database with the env db uri
 	client, err := ent.SetupAndConnectDatabase(dbUri)
@@ -149,5 +145,39 @@ func (ba Bot) HandleMessage(ctx context.Context, up *objects.Update) {
 		ba.chooseTags(ctx, up)
 	case strings.Contains(up.Message.Text, "/get_tags"):
 		ba.getTags(ctx, up)
+	}
+}
+
+func load() {
+	// get environment variables from env
+	for _, env := range os.Environ() {
+		pair := strings.SplitN(env, "=", 2)
+		if pair[0] == TELEGRAM_TOKEN {
+			telegramToken = pair[1]
+		}
+		// postgresql://postgres:changeme@localhost:5435/notion_on_the_go
+		if pair[0] == DATABASE_URL {
+			databaseUrl = pair[1]
+		}
+
+		if pair[0] == PG_DATABASE {
+			pgDatabase = pair[1]
+		}
+
+		if pair[0] == PG_HOST {
+			pgHost = pair[1]
+		}
+
+		if pair[0] == PG_USER {
+			pgUser = pair[1]
+		}
+
+		if pair[0] == PG_PWD {
+			pgPwd = pair[1]
+		}
+
+		if pair[0] == PG_PORT {
+			pgPort = pair[1]
+		}
 	}
 }
