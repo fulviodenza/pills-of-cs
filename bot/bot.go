@@ -21,23 +21,20 @@ import (
 	"github.com/jomei/notionapi"
 )
 
+// APIs constants
 const (
 	NOTION_TOKEN       = "NOTION_TOKEN"
 	TELEGRAM_TOKEN     = "TELEGRAM_TOKEN"
 	PAGE_ID            = "48b530629463419ca92e22cc6ef50dab"
 	PILLS_ASSET        = "./assets/pills.json"
 	HELP_MESSAGE_ASSET = "./assets/help_message.txt"
+	DATABASE_URL       = "DATABASE_URL"
 )
 
-var databaseUrl, pgUser, pgPwd, pgPort, pgHost, phPort, pgDatabase, telegramToken string
-
-const (
-	DATABASE_URL = "DATABASE_URL"
-	PG_USER      = "PGUSER"
-	PG_PWD       = "PGPASSWORD"
-	PG_HOST      = "PGHOST"
-	PG_PORT      = "PGPORT"
-	PG_DATABASE  = "PGDATABASE"
+var (
+	databaseUrl   string
+	telegramToken string
+	notionToken   string
 )
 
 type Bot struct {
@@ -49,11 +46,6 @@ type Bot struct {
 var _ entities.IBot = (*Bot)(nil)
 
 func NewBotWithConfig() (*Bot, *ent.Client, error) {
-	var (
-		notionToken string
-		dbUri       string
-	)
-
 	var dst []byte
 	_, err := parser.Parse(PILLS_ASSET, &dst)
 	if err != nil {
@@ -72,12 +64,11 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 		return nil, nil, err
 	}
 
-	load()
-
-	dbUri = databaseUrl + "://" + pgUser + ":" + pgPwd + "@" + pgHost + ":" + pgPort + "/" + pgDatabase
+	telegramToken = os.Getenv(TELEGRAM_TOKEN)
+	databaseUrl = os.Getenv(DATABASE_URL)
 
 	// connect to database with the env db uri
-	client, err := ent.SetupAndConnectDatabase(dbUri)
+	client, err := ent.SetupAndConnectDatabase(databaseUrl)
 	fmt.Println(client)
 	if err != nil {
 		log.Fatalf("[ent.SetupAndConnectDatabase]: error in db setup or connection: %v", err.Error())
@@ -145,39 +136,5 @@ func (ba Bot) HandleMessage(ctx context.Context, up *objects.Update) {
 		ba.chooseTags(ctx, up)
 	case strings.Contains(up.Message.Text, "/get_tags"):
 		ba.getTags(ctx, up)
-	}
-}
-
-func load() {
-	// get environment variables from env
-	for _, env := range os.Environ() {
-		pair := strings.SplitN(env, "=", 2)
-		if pair[0] == TELEGRAM_TOKEN {
-			telegramToken = pair[1]
-		}
-		// postgresql://postgres:changeme@localhost:5435/notion_on_the_go
-		if pair[0] == DATABASE_URL {
-			databaseUrl = pair[1]
-		}
-
-		if pair[0] == PG_DATABASE {
-			pgDatabase = pair[1]
-		}
-
-		if pair[0] == PG_HOST {
-			pgHost = pair[1]
-		}
-
-		if pair[0] == PG_USER {
-			pgUser = pair[1]
-		}
-
-		if pair[0] == PG_PWD {
-			pgPwd = pair[1]
-		}
-
-		if pair[0] == PG_PORT {
-			pgPort = pair[1]
-		}
 	}
 }
