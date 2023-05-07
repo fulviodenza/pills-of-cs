@@ -2,4 +2,4 @@
 definitions, curiosity and best practices in small pills, news about
 computer science world (to be implemented) and other stuff TBD.
 
-To start using the bot run `/pills/`
+To start using the bot run `/pills`
