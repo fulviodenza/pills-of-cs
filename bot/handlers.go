@@ -26,12 +26,6 @@ func (ba Bot) pill(ctx context.Context, up *objects.Update) {
 		log.Fatalf("[b.UserRepo.GetTagsByUserId]: failed getting tags: %v", err.Error())
 		return
 	}
-	if subscribedTags == nil {
-		_, err := ba.Bot.SendMessage(up.Message.Chat.Id, string(ba.HelpMessage), "Markdown", up.Message.MessageId, false, false)
-		if err != nil {
-			return
-		}
-	}
 
 	var randomCategory, randomIndex int64
 	var randomCategoryP []entities.Pill
