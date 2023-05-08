@@ -3,7 +3,6 @@ package bot
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -49,7 +48,7 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 	var dst []byte
 	_, err := parser.Parse(PILLS_ASSET, &dst)
 	if err != nil {
-		return nil, nil, errors.New(err.Error())
+		return nil, nil, err
 	}
 
 	sp := entities.SerializedPills{}
@@ -95,7 +94,7 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 	categories := map[string][]entities.Pill{}
 	for _, p := range sp.Pills {
 		for _, category := range p.Tags {
-			categories[category] = []entities.Pill{p}
+			categories[category] = append(categories[category], p)
 		}
 	}
 	return &Bot{
