@@ -43,7 +43,6 @@ func (b Bot) Pill(ctx context.Context, up *objects.Update) {
 	rand.Seed(time.Now().Unix())
 
 	if len(subscribedTags) > 0 {
-
 		randomCategory = utils.MakeTimestamp(len(subscribedTags))
 		randomIndex = utils.MakeTimestamp(len(b.Categories[subscribedTags[randomCategory]]))
 		_, err = b.Bot.SendMessage(
@@ -88,6 +87,7 @@ func (b Bot) ChooseTags(ctx context.Context, up *objects.Update) {
 
 	err := b.UserRepo.AddTagsToUser(ctx, strconv.Itoa(up.Message.Chat.Id), args[1:])
 	if err != nil {
+		log.Fatalf("[ba.UserRepo.AddTagsToUser]: failed adding tag to user: %v", err.Error())
 		return
 	}
 
