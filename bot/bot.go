@@ -126,16 +126,16 @@ func (b Bot) Start(ctx context.Context) error {
 func (ba Bot) HandleMessage(ctx context.Context, up *objects.Update) {
 	switch {
 	case strings.Contains(up.Message.Text, "/start"):
-		ba.start(ctx, up)
+		ba.Run(ctx, up)
 	case strings.Contains(up.Message.Text, "/pill"):
-		ba.pill(ctx, up)
+		ba.Pill(ctx, up)
 	case strings.Contains(up.Message.Text, "/help"):
-		ba.help(ctx, up)
+		ba.Help(ctx, up)
 	case strings.Contains(up.Message.Text, "/choose_tags"):
-		ba.chooseTags(ctx, up)
+		ba.ChooseTags(ctx, up)
 	case strings.Contains(up.Message.Text, "/get_tags"):
-		ba.getTags(ctx, up)
+		ba.GetTags(ctx, up)
 	case strings.Contains(up.Message.Text, "/get_subscribed_categories"):
-		ba.getSubscribedTags(ctx, up)
+		ba.GetSubscribedTags(ctx, up)
 	}
 }
