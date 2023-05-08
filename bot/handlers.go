@@ -21,6 +21,7 @@ func (ba Bot) start(ctx context.Context, up *objects.Update) {
 }
 
 func (ba Bot) pill(ctx context.Context, up *objects.Update) {
+
 	subscribedTags, err := ba.UserRepo.GetTagsByUserId(ctx, strconv.Itoa(up.Message.Chat.Id))
 	if err != nil {
 		log.Fatalf("[b.UserRepo.GetTagsByUserId]: failed getting tags: %v", err.Error())
@@ -32,13 +33,13 @@ func (ba Bot) pill(ctx context.Context, up *objects.Update) {
 	rand.Seed(time.Now().Unix())
 
 	if len(subscribedTags) > 0 {
-
 		randomCategory = utils.MakeTimestamp(len(subscribedTags))
 		randomIndex = utils.MakeTimestamp(len(ba.Categories[subscribedTags[randomCategory]]))
 		_, err = ba.Bot.SendMessage(
 			up.Message.Chat.Id,
 			ba.Categories[subscribedTags[randomCategory]][randomIndex].Title+": "+ba.Categories[subscribedTags[randomCategory]][randomIndex].Body, "Markdown", up.Message.MessageId, false, false)
 		if err != nil {
+			log.Fatalf("[ba.Bot.SendMessage]: failed sending message: %v", err.Error())
 			return
 		}
 	} else {
@@ -48,7 +49,7 @@ func (ba Bot) pill(ctx context.Context, up *objects.Update) {
 			up.Message.Chat.Id,
 			randomCategoryP[randomIndex].Title+": "+randomCategoryP[randomIndex].Body, "Markdown", up.Message.MessageId, false, false)
 		if err != nil {
-			return
+			log.Fatalf("[ba.Bot.SendMessage]: failed sending message: %v", err.Error())
 		}
 	}
 }
@@ -56,6 +57,7 @@ func (ba Bot) pill(ctx context.Context, up *objects.Update) {
 func (ba Bot) help(ctx context.Context, up *objects.Update) {
 	_, err := ba.Bot.SendMessage(up.Message.Chat.Id, string(ba.HelpMessage), "Markdown", up.Message.MessageId, false, false)
 	if err != nil {
+		log.Fatalf("[ba.Bot.SendMessage]: failed sending message: %v", err.Error())
 		return
 	}
 }
@@ -74,12 +76,13 @@ func (ba Bot) chooseTags(ctx context.Context, up *objects.Update) {
 
 	err := ba.UserRepo.AddTagsToUser(ctx, strconv.Itoa(up.Message.Chat.Id), args[1:])
 	if err != nil {
+		log.Fatalf("[ba.UserRepo.AddTagsToUser]: failed adding tag to user: %v", err.Error())
 		return
 	}
 
-	log.Printf("Return operation exit")
 	_, err = ba.Bot.SendMessage(up.Message.Chat.Id, "tags updated", "Markdown", up.Message.MessageId, false, false)
 	if err != nil {
+		log.Fatalf("[ba.Bot.SendMessage]: failed sending message: %v", err.Error())
 		return
 	}
 }
@@ -91,6 +94,7 @@ func (ba Bot) getTags(ctx context.Context, up *objects.Update) {
 	}
 	_, err := ba.Bot.SendMessage(up.Message.Chat.Id, msg, "Markdown", up.Message.MessageId, false, false)
 	if err != nil {
+		log.Fatalf("[ba.Bot.SendMessage]: failed sending message: %v", err.Error())
 		return
 	}
 }
@@ -99,16 +103,24 @@ func (ba Bot) getSubscribedTags(ctx context.Context, up *objects.Update) {
 
 	tags, err := ba.UserRepo.GetTagsByUserId(ctx, strconv.Itoa(up.Message.Chat.Id))
 	if err != nil {
+		log.Fatalf("[ba.UserRepo.GetTagsByUserId]: failed getting tags by user id: %v", err.Error())
 		return
 	}
 
+	msg := aggregateTags(tags)
+
+	_, err = ba.Bot.SendMessage(up.Message.Chat.Id, msg, "Markdown", up.Message.MessageId, false, false)
+	if err != nil {
+		log.Fatalf("[ba.Bot.SendMessage]: failed sending message: %v", err.Error())
+		return
+	}
+}
+
+func aggregateTags(tags []string) string {
 	msg := ""
 	for _, s := range tags {
 		msg += "- " + s + "\n"
 	}
 
-	_, err = ba.Bot.SendMessage(up.Message.Chat.Id, msg, "Markdown", up.Message.MessageId, false, false)
-	if err != nil {
-		return
-	}
+	return msg
 }
