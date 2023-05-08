@@ -94,3 +94,21 @@ func (ba Bot) getTags(ctx context.Context, up *objects.Update) {
 		return
 	}
 }
+
+func (ba Bot) getSubscribedTags(ctx context.Context, up *objects.Update) {
+
+	tags, err := ba.UserRepo.GetTagsByUserId(ctx, strconv.Itoa(up.Message.Chat.Id))
+	if err != nil {
+		return
+	}
+
+	msg := ""
+	for _, s := range tags {
+		msg += "- " + s + "\n"
+	}
+
+	_, err = ba.Bot.SendMessage(up.Message.Chat.Id, msg, "Markdown", up.Message.MessageId, false, false)
+	if err != nil {
+		return
+	}
+}

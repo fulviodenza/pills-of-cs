@@ -135,5 +135,7 @@ func (ba Bot) HandleMessage(ctx context.Context, up *objects.Update) {
 		ba.chooseTags(ctx, up)
 	case strings.Contains(up.Message.Text, "/get_tags"):
 		ba.getTags(ctx, up)
+	case strings.Contains(up.Message.Text, "/get_subscribed_categories"):
+		ba.getSubscribedTags(ctx, up)
 	}
 }
