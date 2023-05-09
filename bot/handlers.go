@@ -141,7 +141,7 @@ func (b Bot) SchedulePill(ctx context.Context, up *objects.Update) {
 	id := strconv.Itoa(up.Message.Chat.Id)
 
 	args := strings.SplitN(up.Message.Text, " ", -1)
-	sched, err := time.Parse(time.RFC3339, args[1])
+	sched, err := time.Parse("HH:MM", args[1])
 	if err != nil {
 		return
 	}
