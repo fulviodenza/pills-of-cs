@@ -3,6 +3,8 @@
 package user
 
 import (
+	"time"
+
 	"entgo.io/ent/dialect/sql"
 	"github.com/pills-of-cs/adapters/ent/predicate"
 )
@@ -52,6 +54,11 @@ func IDLTE(id string) predicate.User {
 	return predicate.User(sql.FieldLTE(FieldID, id))
 }
 
+// Schedule applies equality check predicate on the "schedule" field. It's identical to ScheduleEQ.
+func Schedule(v time.Time) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldSchedule, v))
+}
+
 // CategoriesIsNil applies the IsNil predicate on the "categories" field.
 func CategoriesIsNil() predicate.User {
 	return predicate.User(sql.FieldIsNull(FieldCategories))
@@ -60,6 +67,46 @@ func CategoriesIsNil() predicate.User {
 // CategoriesNotNil applies the NotNil predicate on the "categories" field.
 func CategoriesNotNil() predicate.User {
 	return predicate.User(sql.FieldNotNull(FieldCategories))
+}
+
+// ScheduleEQ applies the EQ predicate on the "schedule" field.
+func ScheduleEQ(v time.Time) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldSchedule, v))
+}
+
+// ScheduleNEQ applies the NEQ predicate on the "schedule" field.
+func ScheduleNEQ(v time.Time) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldSchedule, v))
+}
+
+// ScheduleIn applies the In predicate on the "schedule" field.
+func ScheduleIn(vs ...time.Time) predicate.User {
+	return predicate.User(sql.FieldIn(FieldSchedule, vs...))
+}
+
+// ScheduleNotIn applies the NotIn predicate on the "schedule" field.
+func ScheduleNotIn(vs ...time.Time) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldSchedule, vs...))
+}
+
+// ScheduleGT applies the GT predicate on the "schedule" field.
+func ScheduleGT(v time.Time) predicate.User {
+	return predicate.User(sql.FieldGT(FieldSchedule, v))
+}
+
+// ScheduleGTE applies the GTE predicate on the "schedule" field.
+func ScheduleGTE(v time.Time) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldSchedule, v))
+}
+
+// ScheduleLT applies the LT predicate on the "schedule" field.
+func ScheduleLT(v time.Time) predicate.User {
+	return predicate.User(sql.FieldLT(FieldSchedule, v))
+}
+
+// ScheduleLTE applies the LTE predicate on the "schedule" field.
+func ScheduleLTE(v time.Time) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldSchedule, v))
 }
 
 // And groups predicates with the AND operator between them.

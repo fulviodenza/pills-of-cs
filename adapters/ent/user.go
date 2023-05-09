@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/pills-of-cs/adapters/ent/user"
@@ -18,6 +19,8 @@ type User struct {
 	ID string `json:"id,omitempty"`
 	// Categories holds the value of the "categories" field.
 	Categories []string `json:"categories,omitempty"`
+	// Schedule holds the value of the "schedule" field.
+	Schedule time.Time `json:"schedule,omitempty"`
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -29,6 +32,8 @@ func (*User) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case user.FieldID:
 			values[i] = new(sql.NullString)
+		case user.FieldSchedule:
+			values[i] = new(sql.NullTime)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type User", columns[i])
 		}
@@ -57,6 +62,12 @@ func (u *User) assignValues(columns []string, values []any) error {
 				if err := json.Unmarshal(*value, &u.Categories); err != nil {
 					return fmt.Errorf("unmarshal field categories: %w", err)
 				}
+			}
+		case user.FieldSchedule:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field schedule", values[i])
+			} else if value.Valid {
+				u.Schedule = value.Time
 			}
 		}
 	}
@@ -88,6 +99,9 @@ func (u *User) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v, ", u.ID))
 	builder.WriteString("categories=")
 	builder.WriteString(fmt.Sprintf("%v", u.Categories))
+	builder.WriteString(", ")
+	builder.WriteString("schedule=")
+	builder.WriteString(u.Schedule.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }
