@@ -4,7 +4,9 @@ package ent
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -21,6 +23,12 @@ type UserCreate struct {
 // SetCategories sets the "categories" field.
 func (uc *UserCreate) SetCategories(s []string) *UserCreate {
 	uc.mutation.SetCategories(s)
+	return uc
+}
+
+// SetSchedule sets the "schedule" field.
+func (uc *UserCreate) SetSchedule(t time.Time) *UserCreate {
+	uc.mutation.SetSchedule(t)
 	return uc
 }
 
@@ -64,6 +72,9 @@ func (uc *UserCreate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (uc *UserCreate) check() error {
+	if _, ok := uc.mutation.Schedule(); !ok {
+		return &ValidationError{Name: "schedule", err: errors.New(`ent: missing required field "User.schedule"`)}
+	}
 	return nil
 }
 
@@ -102,6 +113,10 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := uc.mutation.Categories(); ok {
 		_spec.SetField(user.FieldCategories, field.TypeJSON, value)
 		_node.Categories = value
+	}
+	if value, ok := uc.mutation.Schedule(); ok {
+		_spec.SetField(user.FieldSchedule, field.TypeTime, value)
+		_node.Schedule = value
 	}
 	return _node, _spec
 }

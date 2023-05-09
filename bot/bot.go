@@ -7,7 +7,9 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
+	"github.com/go-co-op/gocron"
 	"github.com/pills-of-cs/adapters/ent"
 	repositories "github.com/pills-of-cs/adapters/repositories"
 	"github.com/pills-of-cs/parser"
@@ -77,8 +79,8 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 	cf := cfg.DefaultUpdateConfigs()
 
 	bot_config := cfg.BotConfigs{
-		BotAPI: cfg.DefaultBotAPI,
-		APIKey: telegramToken, UpdateConfigs: cf,
+		BotAPI:         cfg.DefaultBotAPI,
+		UpdateConfigs:  cf,
 		Webhook:        false,
 		LogFileAddress: cfg.DefaultLogFile,
 	}
@@ -97,18 +99,21 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 			categories[category] = append(categories[category], p)
 		}
 	}
+
+	s := gocron.NewScheduler(time.UTC)
+
 	return &Bot{
 		&entities.BotConf{
-			TelegramToken: telegramToken,
-			Cfg:           bot_config,
-			Bot:           *b,
-			NotionClient:  *notion_client,
-			Pills:         sp.Pills,
-			Categories:    categories,
-			HelpMessage:   string(dst),
+			Bot:          *b,
+			NotionClient: *notion_client,
+			Pills:        sp.Pills,
+			Categories:   categories,
+			HelpMessage:  string(dst),
 			UserRepo: repositories.UserRepo{
 				Client: client,
 			},
+			Schedules: map[string]time.Time{},
+			Scheduler: s,
 		},
 	}, client, err
 }
@@ -137,5 +142,7 @@ func (ba Bot) HandleMessage(ctx context.Context, up *objects.Update) {
 		ba.GetTags(ctx, up)
 	case strings.Contains(up.Message.Text, "/get_subscribed_categories"):
 		ba.GetSubscribedTags(ctx, up)
+	case strings.Contains(up.Message.Text, "/schedule_pill"):
+		ba.SchedulePill(ctx, up)
 	}
 }

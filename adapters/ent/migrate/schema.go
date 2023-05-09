@@ -12,6 +12,7 @@ var (
 	UsersColumns = []*schema.Column{
 		{Name: "user_id", Type: field.TypeString},
 		{Name: "categories", Type: field.TypeJSON, Nullable: true},
+		{Name: "schedule", Type: field.TypeTime},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{
