@@ -80,6 +80,7 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 
 	bot_config := cfg.BotConfigs{
 		BotAPI:         cfg.DefaultBotAPI,
+		APIKey:         telegramToken,
 		UpdateConfigs:  cf,
 		Webhook:        false,
 		LogFileAddress: cfg.DefaultLogFile,
