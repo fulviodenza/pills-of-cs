@@ -79,8 +79,10 @@ func (b Bot) GetTags(ctx context.Context, up *objects.Update) {
 		msg += "- " + k + "\n"
 	}
 	_, err := b.Bot.SendMessage(up.Message.Chat.Id, msg, "Markdown", up.Message.MessageId, false, false)
-	log.Fatalf("[b.Bot.SendMessage]: failed sending message: %v", err.Error())
-	return
+	if err != nil {
+		log.Fatalf("[b.Bot.SendMessage]: failed sending message: %v", err.Error())
+		return
+	}
 }
 
 func (b Bot) GetSubscribedTags(ctx context.Context, up *objects.Update) {
