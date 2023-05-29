@@ -4,7 +4,7 @@
   <img src="https://user-images.githubusercontent.com/9990423/236812860-dd92f5e7-5cd3-447e-90e2-4c9388746f08.png" width="300" height="300" />
 </p>
 
-a telegram bot to retrieve pills of computer science and give a look at my notebook
+a telegram bot to retrieve pills of computer science and give a look at my notebook (<a href="https://t.me/pillsofcsbot">Link</a>)
 
 # commands
 
