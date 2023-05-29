@@ -73,11 +73,43 @@ func (b Bot) Help(ctx context.Context, up *objects.Update) {
 	}
 }
 
+func (b Bot) GetTags(ctx context.Context, up *objects.Update) {
+	msg := ""
+	for k := range b.Categories {
+		msg += "- " + k + "\n"
+	}
+	_, err := b.Bot.SendMessage(up.Message.Chat.Id, msg, "Markdown", up.Message.MessageId, false, false)
+	if err != nil {
+		log.Fatalf("[b.Bot.SendMessage]: failed sending message: %v", err.Error())
+		return
+	}
+}
+
+func (b Bot) GetSubscribedTags(ctx context.Context, up *objects.Update) {
+
+	tags, err := b.UserRepo.GetTagsByUserId(ctx, strconv.Itoa(up.Message.Chat.Id))
+	if err != nil {
+		log.Fatalf("[b.UserRepo.GetTagsByUserId]: failed getting tags by user id: %v", err.Error())
+		return
+	}
+
+	msg := aggregateTags(tags)
+
+	_, err = b.Bot.SendMessage(up.Message.Chat.Id, msg, "Markdown", up.Message.MessageId, false, false)
+	if err != nil {
+		log.Fatalf("[b.Bot.SendMessage]: failed sending message: %v", err.Error())
+		return
+	}
+}
+
 func (b Bot) ChooseTags(ctx context.Context, up *objects.Update) {
 	// /cmd args[0] args[1]
 	args := strings.SplitN(up.Message.Text, " ", -1)
 
 	// Replacing the underscores with spaces in the arguments.
+	// This is done for more-than-one tags.
+	// Indeed, /choose_tags command requires:
+	///choose_tags distributed_systems for example
 	for i, a := range args {
 		if strings.Contains(a, "_") {
 			twoWordArg := strings.SplitN(a, "_", 2)
@@ -105,31 +137,29 @@ func (b Bot) ChooseTags(ctx context.Context, up *objects.Update) {
 	}
 }
 
-func (b Bot) GetTags(ctx context.Context, up *objects.Update) {
-	msg := ""
-	for k := range b.Categories {
-		msg += "- " + k + "\n"
-	}
-	_, err := b.Bot.SendMessage(up.Message.Chat.Id, msg, "Markdown", up.Message.MessageId, false, false)
-	log.Fatalf("[b.Bot.SendMessage]: failed sending message: %v", err.Error())
-	return
-}
+// /schedule_pill 08:00
+func (b Bot) SchedulePill(ctx context.Context, up *objects.Update) {
 
-func (b Bot) GetSubscribedTags(ctx context.Context, up *objects.Update) {
+	id := strconv.Itoa(up.Message.Chat.Id)
 
-	tags, err := b.UserRepo.GetTagsByUserId(ctx, strconv.Itoa(up.Message.Chat.Id))
+	args := strings.SplitN(up.Message.Text, " ", -1)
+	sched, err := time.Parse("HH:MM", args[1])
 	if err != nil {
-		log.Fatalf("[b.UserRepo.GetTagsByUserId]: failed getting tags by user id: %v", err.Error())
 		return
 	}
 
-	msg := aggregateTags(tags)
+	// save the schedule to db
+	b.Schedules[id] = sched
+	b.UserRepo.SaveSchedule(ctx, id, sched)
 
-	_, err = b.Bot.SendMessage(up.Message.Chat.Id, msg, "Markdown", up.Message.MessageId, false, false)
+	// run the goroutine with the cron
+	go b.Scheduler.Every(1).Day().At(b.Schedules[id]).Do(b.Pill, ctx, up)
+	_, err = b.Bot.SendMessage(up.Message.Chat.Id, "I'll remember", "Markdown", up.Message.MessageId, false, false)
 	if err != nil {
 		log.Fatalf("[b.Bot.SendMessage]: failed sending message: %v", err.Error())
 		return
 	}
+
 }
 
 func aggregateTags(tags []string) string {

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/pills-of-cs/adapters/ent/predicate"
 	"github.com/pills-of-cs/adapters/ent/user"
@@ -35,6 +36,7 @@ type UserMutation struct {
 	id               *string
 	categories       *[]string
 	appendcategories []string
+	schedule         *time.Time
 	clearedFields    map[string]struct{}
 	done             bool
 	oldValue         func(context.Context) (*User, error)
@@ -210,6 +212,42 @@ func (m *UserMutation) ResetCategories() {
 	delete(m.clearedFields, user.FieldCategories)
 }
 
+// SetSchedule sets the "schedule" field.
+func (m *UserMutation) SetSchedule(t time.Time) {
+	m.schedule = &t
+}
+
+// Schedule returns the value of the "schedule" field in the mutation.
+func (m *UserMutation) Schedule() (r time.Time, exists bool) {
+	v := m.schedule
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSchedule returns the old "schedule" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldSchedule(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSchedule is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSchedule requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSchedule: %w", err)
+	}
+	return oldValue.Schedule, nil
+}
+
+// ResetSchedule resets all changes to the "schedule" field.
+func (m *UserMutation) ResetSchedule() {
+	m.schedule = nil
+}
+
 // Where appends a list predicates to the UserMutation builder.
 func (m *UserMutation) Where(ps ...predicate.User) {
 	m.predicates = append(m.predicates, ps...)
@@ -244,9 +282,12 @@ func (m *UserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 1)
+	fields := make([]string, 0, 2)
 	if m.categories != nil {
 		fields = append(fields, user.FieldCategories)
+	}
+	if m.schedule != nil {
+		fields = append(fields, user.FieldSchedule)
 	}
 	return fields
 }
@@ -258,6 +299,8 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case user.FieldCategories:
 		return m.Categories()
+	case user.FieldSchedule:
+		return m.Schedule()
 	}
 	return nil, false
 }
@@ -269,6 +312,8 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 	switch name {
 	case user.FieldCategories:
 		return m.OldCategories(ctx)
+	case user.FieldSchedule:
+		return m.OldSchedule(ctx)
 	}
 	return nil, fmt.Errorf("unknown User field %s", name)
 }
@@ -284,6 +329,13 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetCategories(v)
+		return nil
+	case user.FieldSchedule:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSchedule(v)
 		return nil
 	}
 	return fmt.Errorf("unknown User field %s", name)
@@ -345,6 +397,9 @@ func (m *UserMutation) ResetField(name string) error {
 	switch name {
 	case user.FieldCategories:
 		m.ResetCategories()
+		return nil
+	case user.FieldSchedule:
+		m.ResetSchedule()
 		return nil
 	}
 	return fmt.Errorf("unknown User field %s", name)

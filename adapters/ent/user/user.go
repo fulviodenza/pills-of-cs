@@ -9,6 +9,8 @@ const (
 	FieldID = "user_id"
 	// FieldCategories holds the string denoting the categories field in the database.
 	FieldCategories = "categories"
+	// FieldSchedule holds the string denoting the schedule field in the database.
+	FieldSchedule = "schedule"
 	// Table holds the table name of the user in the database.
 	Table = "users"
 )
@@ -17,6 +19,7 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldCategories,
+	FieldSchedule,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).

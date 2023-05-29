@@ -2,24 +2,24 @@ package entities
 
 import (
 	"context"
+	"time"
 
 	bt "github.com/SakoDroid/telego"
-	cfg "github.com/SakoDroid/telego/configs"
 	"github.com/SakoDroid/telego/objects"
+	"github.com/go-co-op/gocron"
 	"github.com/jomei/notionapi"
 	repositories "github.com/pills-of-cs/adapters/repositories"
 )
 
 type BotConf struct {
-	TelegramToken string
-	Cfg           cfg.BotConfigs
-	Bot           bt.Bot
-	NotionClient  notionapi.Client
-	HelpMessage   string
-	UserRepo      repositories.UserRepo
-	Pills         []Pill
-	Categories    map[string][]Pill
-	DbUri         string
+	Bot          bt.Bot
+	NotionClient notionapi.Client
+	HelpMessage  string
+	UserRepo     repositories.UserRepo
+	Pills        []Pill
+	Categories   map[string][]Pill
+	Schedules    map[string]time.Time
+	Scheduler    *gocron.Scheduler
 }
 
 type IBot interface {

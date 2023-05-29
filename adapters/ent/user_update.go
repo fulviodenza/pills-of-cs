@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -43,6 +44,12 @@ func (uu *UserUpdate) AppendCategories(s []string) *UserUpdate {
 // ClearCategories clears the value of the "categories" field.
 func (uu *UserUpdate) ClearCategories() *UserUpdate {
 	uu.mutation.ClearCategories()
+	return uu
+}
+
+// SetSchedule sets the "schedule" field.
+func (uu *UserUpdate) SetSchedule(t time.Time) *UserUpdate {
+	uu.mutation.SetSchedule(t)
 	return uu
 }
 
@@ -98,6 +105,9 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if uu.mutation.CategoriesCleared() {
 		_spec.ClearField(user.FieldCategories, field.TypeJSON)
 	}
+	if value, ok := uu.mutation.Schedule(); ok {
+		_spec.SetField(user.FieldSchedule, field.TypeTime, value)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, uu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{user.Label}
@@ -133,6 +143,12 @@ func (uuo *UserUpdateOne) AppendCategories(s []string) *UserUpdateOne {
 // ClearCategories clears the value of the "categories" field.
 func (uuo *UserUpdateOne) ClearCategories() *UserUpdateOne {
 	uuo.mutation.ClearCategories()
+	return uuo
+}
+
+// SetSchedule sets the "schedule" field.
+func (uuo *UserUpdateOne) SetSchedule(t time.Time) *UserUpdateOne {
+	uuo.mutation.SetSchedule(t)
 	return uuo
 }
 
@@ -217,6 +233,9 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	}
 	if uuo.mutation.CategoriesCleared() {
 		_spec.ClearField(user.FieldCategories, field.TypeJSON)
+	}
+	if value, ok := uuo.mutation.Schedule(); ok {
+		_spec.SetField(user.FieldSchedule, field.TypeTime, value)
 	}
 	_node = &User{config: uuo.config}
 	_spec.Assign = _node.assignValues

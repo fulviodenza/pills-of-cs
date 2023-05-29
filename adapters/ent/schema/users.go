@@ -15,6 +15,7 @@ func (User) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("id").StorageKey("user_id"),
 		field.JSON("categories", []string{}).Optional(),
+		field.Time("schedule"),
 	}
 }
 

@@ -3,6 +3,7 @@ package adapters
 import (
 	"context"
 	"log"
+	"time"
 
 	"github.com/pills-of-cs/adapters/ent"
 	"github.com/pills-of-cs/adapters/ent/user"
@@ -18,7 +19,6 @@ func (ur *UserRepo) AddTagsToUser(ctx context.Context, id string, topics []strin
 		Where(user.IDEQ(id)).
 		First(ctx)
 	if _, ok := err.(*ent.NotFoundError); ok {
-
 		err = ur.User.Create().
 			SetID(id).
 			SetCategories(topics).
@@ -45,6 +45,36 @@ func (ur *UserRepo) AddTagsToUser(ctx context.Context, id string, topics []strin
 			log.Fatalf("[ur.User.Update]: error executing the query: %v", err)
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (ur *UserRepo) SaveSchedule(ctx context.Context, id string, schedule time.Time) error {
+
+	userEl, err := ur.User.Query().
+		Where(user.IDEQ(id)).
+		First(ctx)
+	if _, ok := err.(*ent.NotFoundError); ok {
+		err = ur.User.Create().
+			SetID(id).
+			SetCategories([]string{}).
+			Exec(ctx)
+		if err != nil {
+			log.Fatalf("[ur.User.Create]: error executing the query: %v", err)
+			return err
+		}
+	}
+	if err != nil {
+		if _, ok := err.(*ent.NotFoundError); !ok {
+			log.Fatalf("[ur.User.Create]: error executing the query: %v", err)
+			return err
+		}
+	}
+
+	err = ur.User.Update().SetSchedule(schedule).Where(user.IDEQ(userEl.ID)).Exec(ctx)
+	if err != nil {
+		log.Fatalf("[ur.User.Update]: error executing the query: %v", err)
 	}
 
 	return nil
