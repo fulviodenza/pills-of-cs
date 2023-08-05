@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -27,8 +26,8 @@ func (uc *UserCreate) SetCategories(s []string) *UserCreate {
 }
 
 // SetSchedule sets the "schedule" field.
-func (uc *UserCreate) SetSchedule(t time.Time) *UserCreate {
-	uc.mutation.SetSchedule(t)
+func (uc *UserCreate) SetSchedule(s string) *UserCreate {
+	uc.mutation.SetSchedule(s)
 	return uc
 }
 
@@ -115,7 +114,7 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		_node.Categories = value
 	}
 	if value, ok := uc.mutation.Schedule(); ok {
-		_spec.SetField(user.FieldSchedule, field.TypeTime, value)
+		_spec.SetField(user.FieldSchedule, field.TypeString, value)
 		_node.Schedule = value
 	}
 	return _node, _spec

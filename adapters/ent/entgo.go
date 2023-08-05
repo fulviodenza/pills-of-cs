@@ -12,19 +12,19 @@ import (
 func SetupAndConnectDatabase(baseConnectionString string) (*Client, error) {
 	db, err := sql.Open("pgx", baseConnectionString)
 	if err != nil {
-		log.Fatalf("[sql.Open]: %v", err)
+		log.Fatalf("[SetupAndConnectDatabase]: %v", err)
 		return nil, err
 	}
 
 	// Create the "pills" table
-	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS users (user_id TEXT PRIMARY KEY, categories json, schedule DATE)`)
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS users (user_id TEXT PRIMARY KEY, categories json, schedule TEXT)`)
 	if err != nil {
-		log.Fatalf("[db.Exec]: error executing the init query: %v", err)
+		log.Fatalf("[SetupAndConnectDatabase]: error executing the init query: %v", err)
 	}
 
 	drv := entsql.OpenDB(dialect.Postgres, db)
 	client := NewClient(Driver(drv))
 
-	log.Printf("\n[Info]: Database connection established")
+	log.Printf("\n[SetupAndConnectDatabase]: Database connection established")
 	return client, err
 }

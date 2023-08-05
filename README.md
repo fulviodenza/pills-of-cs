@@ -15,10 +15,9 @@ commands available for this bot, for now are:
 - `/pill`: to get a pill from my notebook;
 - `/get_tags`: to get available tags to subscribe to;
 - `/choose_tag [tag]`: to get subscribed to a specific tag;
-
+- `/schedule_pill [HH:MM]`: to schedule a pill at a give hour and minute of every day
 # next features
-
-- [x] `/help`: to retrieve available commands (05/12/2022)
-- [ ] `/schedule_pill`: to schedule pills
-- [x] `/choose_tags`: to receive only pills about a specific tag/category
 - [ ] `/set_news`: to start receiving news
+- [ ] `/schedule_news`: to schedule the receive of a set of news over various topics
+- [ ] `/quiz`: to get a quiz to get preparated over a set of topics
+- [ ] `/interview_tips`: to get some tips about interviews

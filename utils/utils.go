@@ -22,3 +22,12 @@ func Pick[K comparable, V any](m map[K]V) V {
 	}
 	panic("unreachable")
 }
+
+func AggregateTags(tags []string) string {
+	msg := ""
+	for _, s := range tags {
+		msg += "- " + s + "\n"
+	}
+
+	return msg
+}

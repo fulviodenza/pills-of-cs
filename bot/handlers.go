@@ -2,6 +2,7 @@ package bot
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"math/rand"
 	"strconv"
@@ -13,7 +14,7 @@ import (
 	"github.com/pills-of-cs/utils"
 )
 
-var _ IBot = &Bot{}
+var _ IBot = (*Bot)(nil)
 
 type IBot interface {
 	Run(ctx context.Context, up *objects.Update) error
@@ -21,9 +22,10 @@ type IBot interface {
 	Help(ctx context.Context, up *objects.Update) error
 	ChooseTags(ctx context.Context, up *objects.Update) error
 	GetTags(ctx context.Context, up *objects.Update) error
+	SchedulePill(ctx context.Context, up *objects.Update) error
 }
 
-func (b Bot) Run(ctx context.Context, up *objects.Update) error {
+func (b *Bot) Run(ctx context.Context, up *objects.Update) error {
 	_, err := b.Bot.SendMessage(up.Message.Chat.Id, "Welcome to the pills-of-cs bot! Press `/pill` to request a pill or `/help` to get informations about the bot", "Markdown", up.Message.MessageId, false, false)
 	if err != nil {
 		log.Fatalf("[Run]: failed sending message: %v", err.Error())
@@ -32,8 +34,7 @@ func (b Bot) Run(ctx context.Context, up *objects.Update) error {
 	return nil
 }
 
-func (b Bot) Pill(ctx context.Context, up *objects.Update) error {
-
+func (b *Bot) Pill(ctx context.Context, up *objects.Update) error {
 	subscribedTags, err := b.UserRepo.GetTagsByUserId(ctx, strconv.Itoa(up.Message.Chat.Id))
 	if err != nil {
 		log.Fatalf("[Pill]: failed getting tags: %v", err.Error())
@@ -68,7 +69,7 @@ func (b Bot) Pill(ctx context.Context, up *objects.Update) error {
 	return nil
 }
 
-func (b Bot) Help(ctx context.Context, up *objects.Update) error {
+func (b *Bot) Help(ctx context.Context, up *objects.Update) error {
 	_, err := b.Bot.SendMessage(up.Message.Chat.Id, string(b.HelpMessage), "Markdown", up.Message.MessageId, false, false)
 	if err != nil {
 		log.Fatalf("[Help]: failed sending message: %v", err.Error())
@@ -77,7 +78,7 @@ func (b Bot) Help(ctx context.Context, up *objects.Update) error {
 	return nil
 }
 
-func (b Bot) GetTags(ctx context.Context, up *objects.Update) error {
+func (b *Bot) GetTags(ctx context.Context, up *objects.Update) error {
 	msg := ""
 	for k := range b.Categories {
 		msg += "- " + k + "\n"
@@ -90,15 +91,14 @@ func (b Bot) GetTags(ctx context.Context, up *objects.Update) error {
 	return nil
 }
 
-func (b Bot) GetSubscribedTags(ctx context.Context, up *objects.Update) error {
-
+func (b *Bot) GetSubscribedTags(ctx context.Context, up *objects.Update) error {
 	tags, err := b.UserRepo.GetTagsByUserId(ctx, strconv.Itoa(up.Message.Chat.Id))
 	if err != nil {
 		log.Fatalf("[GetSubscribedTags]: failed getting tags by user id: %v", err.Error())
 		return err
 	}
 
-	msg := aggregateTags(tags)
+	msg := utils.AggregateTags(tags)
 
 	_, err = b.Bot.SendMessage(up.Message.Chat.Id, msg, "Markdown", up.Message.MessageId, false, false)
 	if err != nil {
@@ -108,12 +108,12 @@ func (b Bot) GetSubscribedTags(ctx context.Context, up *objects.Update) error {
 	return nil
 }
 
-func (b Bot) ChooseTags(ctx context.Context, up *objects.Update) error {
+func (b *Bot) ChooseTags(ctx context.Context, up *objects.Update) error {
 	// /cmd args[0] args[1]
 	args := strings.SplitN(up.Message.Text, " ", -1)
 
 	// Replacing the underscores with spaces in the arguments.
-	// This is done for more-than-one tags.
+	// This is done for more-than-one-word tags.
 	// Indeed, /choose_tags command requires:
 	///choose_tags distributed_systems for example
 	for i, a := range args {
@@ -145,56 +145,46 @@ func (b Bot) ChooseTags(ctx context.Context, up *objects.Update) error {
 }
 
 // /schedule_pill 08:00
-func (b Bot) SchedulePill(ctx context.Context, up *objects.Update) error {
+func (b *Bot) SchedulePill(ctx context.Context, up *objects.Update) error {
 	id := strconv.Itoa(up.Message.Chat.Id)
 
+	// args[1] contains the time HH:MM
 	args := strings.SplitN(up.Message.Text, " ", -1)
-	sched, err := time.Parse(time.Kitchen, args[1])
-	if err != nil {
-		log.Fatalf("[SchedulePill]: failed parsing time: %v", err.Error())
-		return err
-	}
-	log.Printf("[time.Parse]: parsed time: %v", sched)
+	sched := args[1]
 
-	// save the schedule to db
-	b.Schedules[id] = sched
-	err = b.UserRepo.SaveSchedule(ctx, id, sched)
+	err := b.UserRepo.SaveSchedule(ctx, id, sched)
 	if err != nil {
 		log.Fatalf("[SchedulePill]: failed saving time: %v", err.Error())
 		return err
 	}
 
-	_, err = b.Bot.SendMessage(up.Message.Chat.Id, "I'll remember", "Markdown", up.Message.MessageId, false, false)
+	// times contains an array with two elements [Hours, Minutes]
+	times := strings.SplitN(sched, ":", -1)
+	// in the crontab minutes come as first field
+	crontab := fmt.Sprintf("%s %s * * *", times[1], times[0])
+	// the human readable format is with times[0] (hours] first
+	message := fmt.Sprintf("I'll send you a pill every day at: %s:%s", times[0], times[1])
+	_, err = b.Bot.SendMessage(up.Message.Chat.Id, message, "Markdown", up.Message.MessageId, false, false)
 	if err != nil {
 		log.Fatalf("[SchedulePill]: failed sending message: %v", err.Error())
 		return err
 	}
 
 	// run the goroutine with the cron
-	go func(ctx context.Context) {
+	go func(ctx context.Context, u *objects.Update) {
 		defer func() {
 			if r := recover(); r != nil {
 				log.Println("[SchedulePill]: Recovering from panic:", r)
 			}
 		}()
-		_, _ = b.Scheduler.Every(1).Day().At(b.Schedules[id]).Do(b.Pill, ctx, up)
-	}(ctx)
+		_, err = b.Scheduler.AddFunc(crontab, func() {
+			b.Pill(ctx, u)
+		})
+		if err != nil {
+			log.Println("[SchedulePill]: got error:", err)
+			return
+		}
+	}(ctx, up)
 
 	return nil
-}
-
-/*
-2023/08/05 18:23:19 got error: parsing time "08:00" as "HH:MM": cannot parse "08:00" as "HH:MM"
-&{{0xc000335000 false 0x4d3b00 0xc0003b3590 0xc0003b35a8} 0xc00038e410 0xc000397500}
-2023/08/05 18:23:20
-[Info]: Database connection established
-*/
-
-func aggregateTags(tags []string) string {
-	msg := ""
-	for _, s := range tags {
-		msg += "- " + s + "\n"
-	}
-
-	return msg
 }
