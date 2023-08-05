@@ -2,6 +2,7 @@ package bot
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"math/rand"
 	"strconv"
@@ -148,20 +149,26 @@ func (b Bot) ChooseTags(ctx context.Context, up *objects.Update) error {
 func (b Bot) SchedulePill(ctx context.Context, up *objects.Update) error {
 	id := strconv.Itoa(up.Message.Chat.Id)
 
+	// args[1] contains the time HH:MM
 	args := strings.SplitN(up.Message.Text, " ", -1)
 	sched := args[1]
+
 	err := b.UserRepo.SaveSchedule(ctx, id, sched)
 	if err != nil {
 		log.Fatalf("[SchedulePill]: failed saving time: %v", err.Error())
 		return err
 	}
 
-	message := "I'll remember the given time: " + sched
+	message := fmt.Sprintf("I'll send you a pill every day at: %s", sched)
 	_, err = b.Bot.SendMessage(up.Message.Chat.Id, message, "Markdown", up.Message.MessageId, false, false)
 	if err != nil {
 		log.Fatalf("[SchedulePill]: failed sending message: %v", err.Error())
 		return err
 	}
+
+	// times contains an array with two elements [Hours, Minutes]
+	times := strings.SplitN(sched, ":", -1)
+	crontab := fmt.Sprintf("%s %s * * *", times[1], times[0])
 
 	// run the goroutine with the cron
 	go func(ctx context.Context, u *objects.Update) {
@@ -170,12 +177,9 @@ func (b Bot) SchedulePill(ctx context.Context, up *objects.Update) error {
 				log.Println("[SchedulePill]: Recovering from panic:", r)
 			}
 		}()
-		cc, err := b.Bot.AdvancedMode().RegisterChannel(strconv.Itoa(u.Message.Chat.Id), "message")
-		if err != nil {
-			log.Println("[SchedulePill]: got error:", err)
-			return
-		}
-		_, err = b.Scheduler.Every(1).Day().At(args[1]).Do(wrapScheduledPill, ctx, u, cc)
+		_, err = b.Scheduler.AddFunc(crontab, func() {
+			b.wrapScheduledPill(ctx, u)
+		})
 		if err != nil {
 			log.Println("[SchedulePill]: got error:", err)
 			return
@@ -185,11 +189,8 @@ func (b Bot) SchedulePill(ctx context.Context, up *objects.Update) error {
 	return nil
 }
 
-func wrapScheduledPill(ctx context.Context, up *objects.Update, cc *chan *objects.Update) {
-	defer close(*cc)
-	up.Message.Text = "/pill"
-	*cc <- up
-	return
+func (b *Bot) wrapScheduledPill(ctx context.Context, up *objects.Update) {
+	b.Pill(ctx, up)
 }
 
 func aggregateTags(tags []string) string {

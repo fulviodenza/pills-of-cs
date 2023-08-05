@@ -5,9 +5,9 @@ import (
 	"time"
 
 	bt "github.com/SakoDroid/telego"
-	"github.com/go-co-op/gocron"
 	"github.com/jomei/notionapi"
 	repositories "github.com/pills-of-cs/adapters/repositories"
+	"github.com/robfig/cron/v3"
 )
 
 type BotConf struct {
@@ -18,7 +18,7 @@ type BotConf struct {
 	Pills        []Pill
 	Categories   map[string][]Pill
 	Schedules    map[string]time.Time
-	Scheduler    *gocron.Scheduler
+	Scheduler    *cron.Cron
 }
 
 type IBot interface {

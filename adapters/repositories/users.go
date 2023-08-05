@@ -51,7 +51,7 @@ func (ur *UserRepo) AddTagsToUser(ctx context.Context, id string, topics []strin
 }
 
 func (ur *UserRepo) SaveSchedule(ctx context.Context, id string, schedule string) error {
-	userEl, err := ur.User.Query().
+	_, err := ur.User.Query().
 		Where(user.IDEQ(id)).
 		First(ctx)
 	if _, ok := err.(*ent.NotFoundError); ok {
@@ -72,7 +72,7 @@ func (ur *UserRepo) SaveSchedule(ctx context.Context, id string, schedule string
 		}
 	}
 
-	err = ur.User.Update().SetSchedule(schedule).Where(user.IDEQ(userEl.ID)).Exec(ctx)
+	err = ur.User.Update().SetSchedule(schedule).Where(user.IDEQ(id)).Exec(ctx)
 	if err != nil {
 		log.Fatalf("[ur.User.Update]: error executing the query: %v", err)
 	}

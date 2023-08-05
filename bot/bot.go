@@ -6,14 +6,13 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 	"time"
 
 	objs "github.com/SakoDroid/telego/objects"
-	"github.com/go-co-op/gocron"
 	"github.com/pills-of-cs/adapters/ent"
 	repositories "github.com/pills-of-cs/adapters/repositories"
 	"github.com/pills-of-cs/parser"
+	"github.com/robfig/cron/v3"
 
 	"github.com/pills-of-cs/entities"
 
@@ -98,8 +97,8 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 		}
 	}
 
-	s := gocron.NewScheduler(time.UTC)
-
+	s := cron.New()
+	s.Start()
 	return &Bot{
 		&entities.BotConf{
 			Bot:          *b,
@@ -116,68 +115,8 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 	}, client, err
 }
 
-// func (b Bot) Start(ctx context.Context) error {
-// var err error = nil
-// //Register the channel
-// messageChannel, err := b.Bot.AdvancedMode().RegisterChannel("", "message")
-// if err != nil {
-// 	log.Fatalf("[Start]: got error: %v", err)
-// 	return err
-// }
-// defer func() {
-// 	b.Bot.AdvancedMode().UnRegisterChannel("", "message")
-// 	close(*messageChannel)
-// }()
-
-// if err != nil {
-// 	log.Fatalf("[Start]: got error: %v", err)
-// 	return err
-// }
-
-// for {
-// 	up := <-*messageChannel
-// 	err = b.HandleMessage(ctx, up)
-// 	if err != nil {
-// 		log.Fatalf("[Start]: got error: %v", err)
-// 		return err
-// 	}
-// }
-// }
-
 func (b *Bot) Start(ctx context.Context) error {
-
 	var err error
-
-	updateChannel := b.Bot.GetUpdateChannel()
-	go func(ctx context.Context, cc *chan *objs.Update) {
-		for {
-			select {
-			case u := <-*cc:
-				b.Pill(ctx, u)
-			}
-		}
-	}(ctx, updateChannel)
-	b.Bot.AddHandler("hi", func(u *objs.Update) {
-
-		//Register channel for receiving messages from this chat.
-		cc, _ := b.Bot.AdvancedMode().RegisterChannel(strconv.Itoa(u.Message.Chat.Id), "message")
-
-		//Sends back a message
-		_, err := b.Bot.SendMessage(u.Message.Chat.Id, "hi to you too, send me a location", "", u.Message.MessageId, false, false)
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		//Waits for an update from this chat
-		up := <-*cc
-
-		//Sends back the received location
-		_, err = b.Bot.SendLocation(up.Message.Chat.Id, false, false, up.Message.Location.Latitude, up.Message.Location.Longitude, up.Message.Location.HorizontalAccuracy, up.Message.MessageId)
-
-		if err != nil {
-			log.Printf("[Start]: %v\n", err)
-		}
-	}, "private")
 
 	b.Bot.AddHandler("start", func(u *objs.Update) {
 		err = b.Run(ctx, u)
