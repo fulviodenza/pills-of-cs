@@ -123,6 +123,8 @@ func (b Bot) Start(ctx context.Context) error {
 	var err error = nil
 	//Register the channel
 	messageChannel, err := b.Bot.AdvancedMode().RegisterChannel("", "message")
+	defer close(*messageChannel)
+
 	if err != nil {
 		log.Fatalf("[Start]: got error: %v", err)
 		return err
@@ -133,7 +135,7 @@ func (b Bot) Start(ctx context.Context) error {
 		err = b.HandleMessage(ctx, up)
 		if err != nil {
 			log.Fatalf("[Start]: got error: %v", err)
-			break
+			return err
 		}
 	}
 	return err
