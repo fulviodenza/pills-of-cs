@@ -21,6 +21,7 @@ func (ur *UserRepo) AddTagsToUser(ctx context.Context, id string, topics []strin
 		err = ur.User.Create().
 			SetID(id).
 			SetCategories(topics).
+			SetSchedule("").
 			Exec(ctx)
 		if err != nil {
 			log.Fatalf("[ur.User.Create]: error executing the query: %v", err)
@@ -50,7 +51,6 @@ func (ur *UserRepo) AddTagsToUser(ctx context.Context, id string, topics []strin
 }
 
 func (ur *UserRepo) SaveSchedule(ctx context.Context, id string, schedule string) error {
-
 	userEl, err := ur.User.Query().
 		Where(user.IDEQ(id)).
 		First(ctx)
@@ -58,6 +58,7 @@ func (ur *UserRepo) SaveSchedule(ctx context.Context, id string, schedule string
 		err = ur.User.Create().
 			SetID(id).
 			SetCategories([]string{}).
+			SetSchedule(schedule).
 			Exec(ctx)
 		if err != nil {
 			log.Fatalf("[ur.User.Create]: error executing the query: %v", err)
