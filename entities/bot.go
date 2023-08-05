@@ -24,5 +24,5 @@ type BotConf struct {
 
 type IBot interface {
 	Start(ctx context.Context) error
-	HandleMessage(ctx context.Context, up *objects.Update)
+	HandleMessage(ctx context.Context, up *objects.Update) error
 }

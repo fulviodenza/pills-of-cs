@@ -123,27 +123,35 @@ func (b Bot) Start(ctx context.Context) error {
 	//Register the channel
 	messageChannel, _ := b.Bot.AdvancedMode().RegisterChannel("", "message")
 
+loop:
 	for {
 		up := <-*messageChannel
-		b.HandleMessage(ctx, up)
+		err := b.HandleMessage(ctx, up)
+		if err != nil {
+			log.Fatalf("got error: %v", err)
+			goto loop
+		}
 	}
 }
 
-func (ba Bot) HandleMessage(ctx context.Context, up *objects.Update) {
+func (ba Bot) HandleMessage(ctx context.Context, up *objects.Update) error {
+	var err error
 	switch {
 	case strings.Contains(up.Message.Text, "/start"):
-		ba.Run(ctx, up)
+		err = ba.Run(ctx, up)
 	case strings.Contains(up.Message.Text, "/pill"):
-		ba.Pill(ctx, up)
+		err = ba.Pill(ctx, up)
 	case strings.Contains(up.Message.Text, "/help"):
-		ba.Help(ctx, up)
+		err = ba.Help(ctx, up)
 	case strings.Contains(up.Message.Text, "/choose_tags"):
-		ba.ChooseTags(ctx, up)
+		err = ba.ChooseTags(ctx, up)
 	case strings.Contains(up.Message.Text, "/get_tags"):
-		ba.GetTags(ctx, up)
+		err = ba.GetTags(ctx, up)
 	case strings.Contains(up.Message.Text, "/get_subscribed_categories"):
-		ba.GetSubscribedTags(ctx, up)
+		err = ba.GetSubscribedTags(ctx, up)
 	case strings.Contains(up.Message.Text, "/schedule_pill"):
-		ba.SchedulePill(ctx, up)
+		err = ba.SchedulePill(ctx, up)
 	}
+
+	return err
 }
