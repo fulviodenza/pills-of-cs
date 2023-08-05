@@ -120,17 +120,23 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 }
 
 func (b Bot) Start(ctx context.Context) error {
+	var err error = nil
 	//Register the channel
-	messageChannel, _ := b.Bot.AdvancedMode().RegisterChannel("", "message")
+	messageChannel, err := b.Bot.AdvancedMode().RegisterChannel("", "message")
+	if err != nil {
+		log.Fatalf("[Start]: got error: %v", err)
+		return err
+	}
 
 	for {
 		up := <-*messageChannel
-		err := b.HandleMessage(ctx, up)
+		err = b.HandleMessage(ctx, up)
 		if err != nil {
-			log.Fatalf("got error: %v", err)
-			<-ctx.Done()
+			log.Fatalf("[Start]: got error: %v", err)
+			break
 		}
 	}
+	return err
 }
 
 func (ba Bot) HandleMessage(ctx context.Context, up *objects.Update) error {
