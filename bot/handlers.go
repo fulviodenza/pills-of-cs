@@ -145,43 +145,43 @@ func (b Bot) ChooseTags(ctx context.Context, up *objects.Update) error {
 }
 
 // /schedule_pill 08:00
-func (b Bot) SchedulePill(ctx context.Context, up *objects.Update) error {
-	id := strconv.Itoa(up.Message.Chat.Id)
+// func (b Bot) SchedulePill(ctx context.Context, up *objects.Update) error {
+// 	id := strconv.Itoa(up.Message.Chat.Id)
 
-	args := strings.SplitN(up.Message.Text, " ", -1)
-	sched, err := time.Parse(time.Kitchen, args[1])
-	if err != nil {
-		log.Fatalf("[SchedulePill]: failed parsing time: %v", err.Error())
-		return err
-	}
-	log.Printf("[time.Parse]: parsed time: %v", sched)
+// 	args := strings.SplitN(up.Message.Text, " ", -1)
+// 	sched, err := time.Parse(time.Kitchen, args[1])
+// 	if err != nil {
+// 		log.Fatalf("[SchedulePill]: failed parsing time: %v", err.Error())
+// 		return err
+// 	}
+// 	log.Printf("[time.Parse]: parsed time: %v", sched)
 
-	// save the schedule to db
-	b.Schedules[id] = sched
-	err = b.UserRepo.SaveSchedule(ctx, id, sched)
-	if err != nil {
-		log.Fatalf("[SchedulePill]: failed saving time: %v", err.Error())
-		return err
-	}
+// 	// save the schedule to db
+// 	b.Schedules[id] = sched
+// 	err = b.UserRepo.SaveSchedule(ctx, id, sched)
+// 	if err != nil {
+// 		log.Fatalf("[SchedulePill]: failed saving time: %v", err.Error())
+// 		return err
+// 	}
 
-	_, err = b.Bot.SendMessage(up.Message.Chat.Id, "I'll remember", "Markdown", up.Message.MessageId, false, false)
-	if err != nil {
-		log.Fatalf("[SchedulePill]: failed sending message: %v", err.Error())
-		return err
-	}
+// 	_, err = b.Bot.SendMessage(up.Message.Chat.Id, "I'll remember", "Markdown", up.Message.MessageId, false, false)
+// 	if err != nil {
+// 		log.Fatalf("[SchedulePill]: failed sending message: %v", err.Error())
+// 		return err
+// 	}
 
-	// run the goroutine with the cron
-	go func(ctx context.Context) {
-		defer func() {
-			if r := recover(); r != nil {
-				log.Println("[SchedulePill]: Recovering from panic:", r)
-			}
-		}()
-		_, _ = b.Scheduler.Every(1).Day().At(b.Schedules[id]).Do(b.Pill, ctx, up)
-	}(ctx)
+// 	// run the goroutine with the cron
+// 	go func(ctx context.Context) {
+// 		defer func() {
+// 			if r := recover(); r != nil {
+// 				log.Println("[SchedulePill]: Recovering from panic:", r)
+// 			}
+// 		}()
+// 		_, _ = b.Scheduler.Every(1).Day().At(b.Schedules[id]).Do(b.Pill, ctx, up)
+// 	}(ctx)
 
-	return nil
-}
+// 	return nil
+// }
 
 /*
 2023/08/05 18:23:19 got error: parsing time "08:00" as "HH:MM": cannot parse "08:00" as "HH:MM"

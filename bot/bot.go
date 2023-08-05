@@ -205,12 +205,12 @@ func (b *Bot) Start(ctx context.Context) error {
 		}
 	}, "private")
 
-	b.Bot.AddHandler("schedule_pill", func(u *objs.Update) {
-		err = b.SchedulePill(ctx, u)
-		if err != nil {
-			log.Println(err)
-		}
-	}, "private")
+	// b.Bot.AddHandler("schedule_pill", func(u *objs.Update) {
+	// 	err = b.SchedulePill(ctx, u)
+	// 	if err != nil {
+	// 		log.Println(err)
+	// 	}
+	// }, "private")
 
 	return err
 }
