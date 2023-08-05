@@ -17,7 +17,7 @@ func main() {
 
 	bot, client, err := bot.NewBotWithConfig()
 	if err != nil {
-		log.Fatalf("[NewBotWithConfig]: %v", err)
+		log.Fatalf("got error: %v", err)
 		os.Exit(1)
 	}
 
@@ -26,15 +26,11 @@ func main() {
 
 	err = bot.Bot.Run()
 	if err != nil {
-		log.Fatalf("[bot.Bot.Run]: %v", err)
+		log.Fatalf("got error: %v", err)
 		os.Exit(1)
 	}
+	go bot.Start(ctx)
 
-	err = bot.Start(ctx)
-	if err != nil {
-		log.Fatalf("[bot.Start]: %v", err)
-		os.Exit(1)
-	}
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	<-sigCh

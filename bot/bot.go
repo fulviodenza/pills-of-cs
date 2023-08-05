@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
+	"strconv"
 	"time"
 
+	objs "github.com/SakoDroid/telego/objects"
 	"github.com/go-co-op/gocron"
 	"github.com/pills-of-cs/adapters/ent"
 	repositories "github.com/pills-of-cs/adapters/repositories"
@@ -18,7 +19,6 @@ import (
 
 	bt "github.com/SakoDroid/telego"
 	cfg "github.com/SakoDroid/telego/configs"
-	"github.com/SakoDroid/telego/objects"
 	"github.com/jomei/notionapi"
 )
 
@@ -116,52 +116,101 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 	}, client, err
 }
 
-func (b Bot) Start(ctx context.Context) error {
-	var err error = nil
-	//Register the channel
-	messageChannel, err := b.Bot.AdvancedMode().RegisterChannel("", "message")
-	if err != nil {
-		log.Fatalf("[Start]: got error: %v", err)
-		return err
-	}
-	defer func() {
-		b.Bot.AdvancedMode().UnRegisterChannel("", "message")
-		close(*messageChannel)
-	}()
+// func (b Bot) Start(ctx context.Context) error {
+// var err error = nil
+// //Register the channel
+// messageChannel, err := b.Bot.AdvancedMode().RegisterChannel("", "message")
+// if err != nil {
+// 	log.Fatalf("[Start]: got error: %v", err)
+// 	return err
+// }
+// defer func() {
+// 	b.Bot.AdvancedMode().UnRegisterChannel("", "message")
+// 	close(*messageChannel)
+// }()
 
-	if err != nil {
-		log.Fatalf("[Start]: got error: %v", err)
-		return err
-	}
+// if err != nil {
+// 	log.Fatalf("[Start]: got error: %v", err)
+// 	return err
+// }
 
-	for {
-		up := <-*messageChannel
-		err = b.HandleMessage(ctx, up)
-		if err != nil {
-			log.Fatalf("[Start]: got error: %v", err)
-			return err
-		}
-	}
-}
+// for {
+// 	up := <-*messageChannel
+// 	err = b.HandleMessage(ctx, up)
+// 	if err != nil {
+// 		log.Fatalf("[Start]: got error: %v", err)
+// 		return err
+// 	}
+// }
+// }
 
-func (ba Bot) HandleMessage(ctx context.Context, up *objects.Update) error {
+func (b *Bot) Start(ctx context.Context) error {
+
 	var err error
-	switch {
-	case strings.Contains(up.Message.Text, "/start"):
-		err = ba.Run(ctx, up)
-	case strings.Contains(up.Message.Text, "/pill"):
-		err = ba.Pill(ctx, up)
-	case strings.Contains(up.Message.Text, "/help"):
-		err = ba.Help(ctx, up)
-	case strings.Contains(up.Message.Text, "/choose_tags"):
-		err = ba.ChooseTags(ctx, up)
-	case strings.Contains(up.Message.Text, "/get_tags"):
-		err = ba.GetTags(ctx, up)
-	case strings.Contains(up.Message.Text, "/get_subscribed_categories"):
-		err = ba.GetSubscribedTags(ctx, up)
-	case strings.Contains(up.Message.Text, "/schedule_pill"):
-		err = ba.SchedulePill(ctx, up)
-	}
+	// updateChannel := b.Bot.GetUpdateChannel()
+	b.Bot.AddHandler("hi", func(u *objs.Update) {
+
+		//Register channel for receiving messages from this chat.
+		cc, _ := b.Bot.AdvancedMode().RegisterChannel(strconv.Itoa(u.Message.Chat.Id), "message")
+
+		//Sends back a message
+		_, err := b.Bot.SendMessage(u.Message.Chat.Id, "hi to you too, send me a location", "", u.Message.MessageId, false, false)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		//Waits for an update from this chat
+		up := <-*cc
+
+		//Sends back the received location
+		_, err = b.Bot.SendLocation(up.Message.Chat.Id, false, false, up.Message.Location.Latitude, up.Message.Location.Longitude, up.Message.Location.HorizontalAccuracy, up.Message.MessageId)
+
+		if err != nil {
+			log.Println(err)
+		}
+	}, "private")
+
+	b.Bot.AddHandler("start", func(u *objs.Update) {
+		err = b.Run(ctx, u)
+		if err != nil {
+			log.Println(err)
+		}
+	}, "private")
+
+	b.Bot.AddHandler("pill", func(u *objs.Update) {
+		err = b.Pill(ctx, u)
+		if err != nil {
+			log.Println(err)
+		}
+	}, "private")
+
+	b.Bot.AddHandler("help", func(u *objs.Update) {
+		err = b.Help(ctx, u)
+		if err != nil {
+			log.Println(err)
+		}
+	}, "private")
+
+	b.Bot.AddHandler("choose_tags", func(u *objs.Update) {
+		err = b.ChooseTags(ctx, u)
+		if err != nil {
+			log.Println(err)
+		}
+	}, "private")
+
+	b.Bot.AddHandler("get_subscribed_categories", func(u *objs.Update) {
+		err = b.GetSubscribedTags(ctx, u)
+		if err != nil {
+			log.Println(err)
+		}
+	}, "private")
+
+	b.Bot.AddHandler("schedule_pill", func(u *objs.Update) {
+		err = b.SchedulePill(ctx, u)
+		if err != nil {
+			log.Println(err)
+		}
+	}, "private")
 
 	return err
 }
