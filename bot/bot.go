@@ -75,18 +75,15 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 		log.Fatalf("[ent.SetupAndConnectDatabase]: error in db setup or connection: %v", err.Error())
 	}
 
-	// Configure telegram bot
-	cf := cfg.DefaultUpdateConfigs()
-
-	bot_config := cfg.BotConfigs{
+	bot_config := &cfg.BotConfigs{
 		BotAPI:         cfg.DefaultBotAPI,
 		APIKey:         telegramToken,
-		UpdateConfigs:  cf,
+		UpdateConfigs:  cfg.DefaultUpdateConfigs(),
 		Webhook:        false,
 		LogFileAddress: cfg.DefaultLogFile,
 	}
 
-	b, err := bt.NewBot(&bot_config)
+	b, err := bt.NewBot(bot_config)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -123,7 +120,14 @@ func (b Bot) Start(ctx context.Context) error {
 	var err error = nil
 	//Register the channel
 	messageChannel, err := b.Bot.AdvancedMode().RegisterChannel("", "message")
-	defer close(*messageChannel)
+	if err != nil {
+		log.Fatalf("[Start]: got error: %v", err)
+		return err
+	}
+	defer func() {
+		b.Bot.AdvancedMode().UnRegisterChannel("", "message")
+		close(*messageChannel)
+	}()
 
 	if err != nil {
 		log.Fatalf("[Start]: got error: %v", err)
@@ -138,7 +142,6 @@ func (b Bot) Start(ctx context.Context) error {
 			return err
 		}
 	}
-	return err
 }
 
 func (ba Bot) HandleMessage(ctx context.Context, up *objects.Update) error {
