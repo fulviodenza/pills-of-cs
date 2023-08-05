@@ -113,7 +113,7 @@ func (b Bot) ChooseTags(ctx context.Context, up *objects.Update) error {
 	args := strings.SplitN(up.Message.Text, " ", -1)
 
 	// Replacing the underscores with spaces in the arguments.
-	// This is done for more-than-one tags.
+	// This is done for more-than-one-word tags.
 	// Indeed, /choose_tags command requires:
 	///choose_tags distributed_systems for example
 	for i, a := range args {
@@ -149,22 +149,15 @@ func (b Bot) SchedulePill(ctx context.Context, up *objects.Update) error {
 	id := strconv.Itoa(up.Message.Chat.Id)
 
 	args := strings.SplitN(up.Message.Text, " ", -1)
-	sched, err := time.Parse(time.Kitchen, args[1])
-	if err != nil {
-		log.Fatalf("[SchedulePill]: failed parsing time: %v", err.Error())
-		return err
-	}
-	log.Printf("[time.Parse]: parsed time: %v", sched)
-
-	// save the schedule to db
-	b.Schedules[id] = sched
-	err = b.UserRepo.SaveSchedule(ctx, id, sched.String())
+	sched := args[1]
+	err := b.UserRepo.SaveSchedule(ctx, id, sched)
 	if err != nil {
 		log.Fatalf("[SchedulePill]: failed saving time: %v", err.Error())
 		return err
 	}
 
-	_, err = b.Bot.SendMessage(up.Message.Chat.Id, "I'll remember", "Markdown", up.Message.MessageId, false, false)
+	message := "I'll remember the given time: " + sched
+	_, err = b.Bot.SendMessage(up.Message.Chat.Id, message, "Markdown", up.Message.MessageId, false, false)
 	if err != nil {
 		log.Fatalf("[SchedulePill]: failed sending message: %v", err.Error())
 		return err
