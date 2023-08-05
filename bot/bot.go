@@ -123,13 +123,12 @@ func (b Bot) Start(ctx context.Context) error {
 	//Register the channel
 	messageChannel, _ := b.Bot.AdvancedMode().RegisterChannel("", "message")
 
-loop:
 	for {
 		up := <-*messageChannel
 		err := b.HandleMessage(ctx, up)
 		if err != nil {
 			log.Fatalf("got error: %v", err)
-			goto loop
+			<-ctx.Done()
 		}
 	}
 }
