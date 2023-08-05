@@ -171,16 +171,31 @@ func (b Bot) SchedulePill(ctx context.Context, up *objects.Update) error {
 	}
 
 	// run the goroutine with the cron
-	go func(ctx context.Context) {
+	go func(ctx context.Context, u *objects.Update) {
 		defer func() {
 			if r := recover(); r != nil {
 				log.Println("[SchedulePill]: Recovering from panic:", r)
 			}
 		}()
-		_, _ = b.Scheduler.Every(1).Day().At(args[1]).Do(b.Pill, ctx, up)
-	}(ctx)
+		cc, err := b.Bot.AdvancedMode().RegisterChannel(strconv.Itoa(u.Message.Chat.Id), "message")
+		if err != nil {
+			log.Println("[SchedulePill]: got error:", err)
+			return
+		}
+		_, err = b.Scheduler.Every(1).Day().At(args[1]).Do(wrapScheduledPill, ctx, u, cc)
+		if err != nil {
+			log.Println("[SchedulePill]: got error:", err)
+			return
+		}
+	}(ctx, up)
 
 	return nil
+}
+
+func wrapScheduledPill(ctx context.Context, up *objects.Update, cc *chan *objects.Update) {
+	defer close(*cc)
+	up.Message.Text = "/pill"
+	*cc <- up
 }
 
 func aggregateTags(tags []string) string {
