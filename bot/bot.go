@@ -147,7 +147,16 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 func (b *Bot) Start(ctx context.Context) error {
 
 	var err error
-	// updateChannel := b.Bot.GetUpdateChannel()
+
+	updateChannel := b.Bot.GetUpdateChannel()
+	go func(ctx context.Context, cc *chan *objs.Update) {
+		for {
+			select {
+			case u := <-*cc:
+				b.Pill(ctx, u)
+			}
+		}
+	}(ctx, updateChannel)
 	b.Bot.AddHandler("hi", func(u *objs.Update) {
 
 		//Register channel for receiving messages from this chat.
