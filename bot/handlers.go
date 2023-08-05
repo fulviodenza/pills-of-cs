@@ -14,7 +14,7 @@ import (
 	"github.com/pills-of-cs/utils"
 )
 
-var _ IBot = &Bot{}
+var _ IBot = (*Bot)(nil)
 
 type IBot interface {
 	Run(ctx context.Context, up *objects.Update) error
@@ -22,9 +22,10 @@ type IBot interface {
 	Help(ctx context.Context, up *objects.Update) error
 	ChooseTags(ctx context.Context, up *objects.Update) error
 	GetTags(ctx context.Context, up *objects.Update) error
+	SchedulePill(ctx context.Context, up *objects.Update) error
 }
 
-func (b Bot) Run(ctx context.Context, up *objects.Update) error {
+func (b *Bot) Run(ctx context.Context, up *objects.Update) error {
 	_, err := b.Bot.SendMessage(up.Message.Chat.Id, "Welcome to the pills-of-cs bot! Press `/pill` to request a pill or `/help` to get informations about the bot", "Markdown", up.Message.MessageId, false, false)
 	if err != nil {
 		log.Fatalf("[Run]: failed sending message: %v", err.Error())
@@ -33,8 +34,7 @@ func (b Bot) Run(ctx context.Context, up *objects.Update) error {
 	return nil
 }
 
-func (b Bot) Pill(ctx context.Context, up *objects.Update) error {
-
+func (b *Bot) Pill(ctx context.Context, up *objects.Update) error {
 	subscribedTags, err := b.UserRepo.GetTagsByUserId(ctx, strconv.Itoa(up.Message.Chat.Id))
 	if err != nil {
 		log.Fatalf("[Pill]: failed getting tags: %v", err.Error())
@@ -69,7 +69,7 @@ func (b Bot) Pill(ctx context.Context, up *objects.Update) error {
 	return nil
 }
 
-func (b Bot) Help(ctx context.Context, up *objects.Update) error {
+func (b *Bot) Help(ctx context.Context, up *objects.Update) error {
 	_, err := b.Bot.SendMessage(up.Message.Chat.Id, string(b.HelpMessage), "Markdown", up.Message.MessageId, false, false)
 	if err != nil {
 		log.Fatalf("[Help]: failed sending message: %v", err.Error())
@@ -78,7 +78,7 @@ func (b Bot) Help(ctx context.Context, up *objects.Update) error {
 	return nil
 }
 
-func (b Bot) GetTags(ctx context.Context, up *objects.Update) error {
+func (b *Bot) GetTags(ctx context.Context, up *objects.Update) error {
 	msg := ""
 	for k := range b.Categories {
 		msg += "- " + k + "\n"
@@ -91,15 +91,14 @@ func (b Bot) GetTags(ctx context.Context, up *objects.Update) error {
 	return nil
 }
 
-func (b Bot) GetSubscribedTags(ctx context.Context, up *objects.Update) error {
-
+func (b *Bot) GetSubscribedTags(ctx context.Context, up *objects.Update) error {
 	tags, err := b.UserRepo.GetTagsByUserId(ctx, strconv.Itoa(up.Message.Chat.Id))
 	if err != nil {
 		log.Fatalf("[GetSubscribedTags]: failed getting tags by user id: %v", err.Error())
 		return err
 	}
 
-	msg := aggregateTags(tags)
+	msg := utils.AggregateTags(tags)
 
 	_, err = b.Bot.SendMessage(up.Message.Chat.Id, msg, "Markdown", up.Message.MessageId, false, false)
 	if err != nil {
@@ -109,7 +108,7 @@ func (b Bot) GetSubscribedTags(ctx context.Context, up *objects.Update) error {
 	return nil
 }
 
-func (b Bot) ChooseTags(ctx context.Context, up *objects.Update) error {
+func (b *Bot) ChooseTags(ctx context.Context, up *objects.Update) error {
 	// /cmd args[0] args[1]
 	args := strings.SplitN(up.Message.Text, " ", -1)
 
@@ -146,7 +145,7 @@ func (b Bot) ChooseTags(ctx context.Context, up *objects.Update) error {
 }
 
 // /schedule_pill 08:00
-func (b Bot) SchedulePill(ctx context.Context, up *objects.Update) error {
+func (b *Bot) SchedulePill(ctx context.Context, up *objects.Update) error {
 	id := strconv.Itoa(up.Message.Chat.Id)
 
 	// args[1] contains the time HH:MM
@@ -178,7 +177,7 @@ func (b Bot) SchedulePill(ctx context.Context, up *objects.Update) error {
 			}
 		}()
 		_, err = b.Scheduler.AddFunc(crontab, func() {
-			b.wrapScheduledPill(ctx, u)
+			b.Pill(ctx, u)
 		})
 		if err != nil {
 			log.Println("[SchedulePill]: got error:", err)
@@ -187,17 +186,4 @@ func (b Bot) SchedulePill(ctx context.Context, up *objects.Update) error {
 	}(ctx, up)
 
 	return nil
-}
-
-func (b *Bot) wrapScheduledPill(ctx context.Context, up *objects.Update) {
-	b.Pill(ctx, up)
-}
-
-func aggregateTags(tags []string) string {
-	msg := ""
-	for _, s := range tags {
-		msg += "- " + s + "\n"
-	}
-
-	return msg
 }

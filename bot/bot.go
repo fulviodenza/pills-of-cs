@@ -8,17 +8,16 @@ import (
 	"os"
 	"time"
 
-	objs "github.com/SakoDroid/telego/objects"
 	"github.com/pills-of-cs/adapters/ent"
 	repositories "github.com/pills-of-cs/adapters/repositories"
-	"github.com/pills-of-cs/parser"
-	"github.com/robfig/cron/v3"
-
 	"github.com/pills-of-cs/entities"
+	"github.com/pills-of-cs/parser"
 
 	bt "github.com/SakoDroid/telego"
 	cfg "github.com/SakoDroid/telego/configs"
+	objs "github.com/SakoDroid/telego/objects"
 	"github.com/jomei/notionapi"
+	"github.com/robfig/cron/v3"
 )
 
 // APIs constants
@@ -30,6 +29,17 @@ const (
 	HELP_MESSAGE_ASSET = "./assets/help_message.txt"
 	DATABASE_URL       = "DATABASE_URL"
 )
+
+var (
+	COMMAND_START                     = "/start"
+	COMMAND_PILL                      = "/pill"
+	COMMAND_HELP                      = "/help"
+	COMMAND_CHOOSE_TAGS               = "/choose_tags"
+	COMMAND_GET_SUBSCRIBED_CATEGORIES = "get_subscribed_categories"
+	COMMAND_SCHEDULE_PILL             = "/schedule_pill"
+)
+
+var PRIVATE_CHAT_TYPE = "private"
 
 var (
 	databaseUrl   string
@@ -118,47 +128,47 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 func (b *Bot) Start(ctx context.Context) error {
 	var err error
 
-	b.Bot.AddHandler("start", func(u *objs.Update) {
+	b.Bot.AddHandler(COMMAND_START, func(u *objs.Update) {
 		err = b.Run(ctx, u)
 		if err != nil {
 			log.Printf("[Start]: %v\n", err)
 		}
-	}, "private")
+	}, PRIVATE_CHAT_TYPE)
 
-	b.Bot.AddHandler("pill", func(u *objs.Update) {
+	b.Bot.AddHandler(COMMAND_PILL, func(u *objs.Update) {
 		err = b.Pill(ctx, u)
 		if err != nil {
 			log.Printf("[Start]: %v\n", err)
 		}
-	}, "private")
+	}, PRIVATE_CHAT_TYPE)
 
-	b.Bot.AddHandler("help", func(u *objs.Update) {
+	b.Bot.AddHandler(COMMAND_HELP, func(u *objs.Update) {
 		err = b.Help(ctx, u)
 		if err != nil {
 			log.Printf("[Start]: %v\n", err)
 		}
-	}, "private")
+	}, PRIVATE_CHAT_TYPE)
 
-	b.Bot.AddHandler("choose_tags", func(u *objs.Update) {
+	b.Bot.AddHandler(COMMAND_CHOOSE_TAGS, func(u *objs.Update) {
 		err = b.ChooseTags(ctx, u)
 		if err != nil {
 			log.Printf("[Start]: %v\n", err)
 		}
-	}, "private")
+	}, PRIVATE_CHAT_TYPE)
 
-	b.Bot.AddHandler("get_subscribed_categories", func(u *objs.Update) {
+	b.Bot.AddHandler(COMMAND_GET_SUBSCRIBED_CATEGORIES, func(u *objs.Update) {
 		err = b.GetSubscribedTags(ctx, u)
 		if err != nil {
 			log.Printf("[Start]: %v\n", err)
 		}
-	}, "private")
+	}, PRIVATE_CHAT_TYPE)
 
-	b.Bot.AddHandler("schedule_pill", func(u *objs.Update) {
+	b.Bot.AddHandler(COMMAND_SCHEDULE_PILL, func(u *objs.Update) {
 		err = b.SchedulePill(ctx, u)
 		if err != nil {
 			log.Printf("[Start]: %v\n", err)
 		}
-	}, "private")
+	}, PRIVATE_CHAT_TYPE)
 
 	return err
 }
