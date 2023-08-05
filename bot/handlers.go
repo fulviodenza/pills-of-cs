@@ -196,6 +196,7 @@ func wrapScheduledPill(ctx context.Context, up *objects.Update, cc *chan *object
 	defer close(*cc)
 	up.Message.Text = "/pill"
 	*cc <- up
+	return
 }
 
 func aggregateTags(tags []string) string {
