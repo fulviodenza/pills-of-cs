@@ -166,51 +166,51 @@ func (b *Bot) Start(ctx context.Context) error {
 		_, err = b.Bot.SendLocation(up.Message.Chat.Id, false, false, up.Message.Location.Latitude, up.Message.Location.Longitude, up.Message.Location.HorizontalAccuracy, up.Message.MessageId)
 
 		if err != nil {
-			log.Println(err)
+			log.Printf("[Start]: %v\n", err)
 		}
 	}, "private")
 
 	b.Bot.AddHandler("start", func(u *objs.Update) {
 		err = b.Run(ctx, u)
 		if err != nil {
-			log.Println(err)
+			log.Printf("[Start]: %v\n", err)
 		}
 	}, "private")
 
 	b.Bot.AddHandler("pill", func(u *objs.Update) {
 		err = b.Pill(ctx, u)
 		if err != nil {
-			log.Println(err)
+			log.Printf("[Start]: %v\n", err)
 		}
 	}, "private")
 
 	b.Bot.AddHandler("help", func(u *objs.Update) {
 		err = b.Help(ctx, u)
 		if err != nil {
-			log.Println(err)
+			log.Printf("[Start]: %v\n", err)
 		}
 	}, "private")
 
 	b.Bot.AddHandler("choose_tags", func(u *objs.Update) {
 		err = b.ChooseTags(ctx, u)
 		if err != nil {
-			log.Println(err)
+			log.Printf("[Start]: %v\n", err)
 		}
 	}, "private")
 
 	b.Bot.AddHandler("get_subscribed_categories", func(u *objs.Update) {
 		err = b.GetSubscribedTags(ctx, u)
 		if err != nil {
-			log.Println(err)
+			log.Printf("[Start]: %v\n", err)
 		}
 	}, "private")
 
-	// b.Bot.AddHandler("schedule_pill", func(u *objs.Update) {
-	// 	err = b.SchedulePill(ctx, u)
-	// 	if err != nil {
-	// 		log.Println(err)
-	// 	}
-	// }, "private")
+	b.Bot.AddHandler("schedule_pill", func(u *objs.Update) {
+		err = b.SchedulePill(ctx, u)
+		if err != nil {
+			log.Printf("[Start]: %v\n", err)
+		}
+	}, "private")
 
 	return err
 }
