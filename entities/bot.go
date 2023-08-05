@@ -5,7 +5,6 @@ import (
 	"time"
 
 	bt "github.com/SakoDroid/telego"
-	"github.com/SakoDroid/telego/objects"
 	"github.com/go-co-op/gocron"
 	"github.com/jomei/notionapi"
 	repositories "github.com/pills-of-cs/adapters/repositories"
@@ -24,5 +23,4 @@ type BotConf struct {
 
 type IBot interface {
 	Start(ctx context.Context) error
-	HandleMessage(ctx context.Context, up *objects.Update)
 }

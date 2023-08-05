@@ -10,7 +10,6 @@ import (
 )
 
 func SetupAndConnectDatabase(baseConnectionString string) (*Client, error) {
-
 	db, err := sql.Open("pgx", baseConnectionString)
 	if err != nil {
 		log.Fatalf("[sql.Open]: %v", err)
