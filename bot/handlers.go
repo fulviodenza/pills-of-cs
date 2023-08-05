@@ -177,18 +177,11 @@ func (b Bot) SchedulePill(ctx context.Context, up *objects.Update) error {
 				log.Println("[SchedulePill]: Recovering from panic:", r)
 			}
 		}()
-		_, _ = b.Scheduler.Every(1).Day().At(b.Schedules[id]).Do(b.Pill, ctx, up)
+		_, _ = b.Scheduler.Every(1).Day().At(args[1]).Do(b.Pill, ctx, up)
 	}(ctx)
 
 	return nil
 }
-
-/*
-2023/08/05 18:23:19 got error: parsing time "08:00" as "HH:MM": cannot parse "08:00" as "HH:MM"
-&{{0xc000335000 false 0x4d3b00 0xc0003b3590 0xc0003b35a8} 0xc00038e410 0xc000397500}
-2023/08/05 18:23:20
-[Info]: Database connection established
-*/
 
 func aggregateTags(tags []string) string {
 	msg := ""
