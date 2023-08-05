@@ -3,8 +3,6 @@
 package user
 
 import (
-	"time"
-
 	"entgo.io/ent/dialect/sql"
 	"github.com/pills-of-cs/adapters/ent/predicate"
 )
@@ -55,7 +53,7 @@ func IDLTE(id string) predicate.User {
 }
 
 // Schedule applies equality check predicate on the "schedule" field. It's identical to ScheduleEQ.
-func Schedule(v time.Time) predicate.User {
+func Schedule(v string) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldSchedule, v))
 }
 
@@ -70,43 +68,68 @@ func CategoriesNotNil() predicate.User {
 }
 
 // ScheduleEQ applies the EQ predicate on the "schedule" field.
-func ScheduleEQ(v time.Time) predicate.User {
+func ScheduleEQ(v string) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldSchedule, v))
 }
 
 // ScheduleNEQ applies the NEQ predicate on the "schedule" field.
-func ScheduleNEQ(v time.Time) predicate.User {
+func ScheduleNEQ(v string) predicate.User {
 	return predicate.User(sql.FieldNEQ(FieldSchedule, v))
 }
 
 // ScheduleIn applies the In predicate on the "schedule" field.
-func ScheduleIn(vs ...time.Time) predicate.User {
+func ScheduleIn(vs ...string) predicate.User {
 	return predicate.User(sql.FieldIn(FieldSchedule, vs...))
 }
 
 // ScheduleNotIn applies the NotIn predicate on the "schedule" field.
-func ScheduleNotIn(vs ...time.Time) predicate.User {
+func ScheduleNotIn(vs ...string) predicate.User {
 	return predicate.User(sql.FieldNotIn(FieldSchedule, vs...))
 }
 
 // ScheduleGT applies the GT predicate on the "schedule" field.
-func ScheduleGT(v time.Time) predicate.User {
+func ScheduleGT(v string) predicate.User {
 	return predicate.User(sql.FieldGT(FieldSchedule, v))
 }
 
 // ScheduleGTE applies the GTE predicate on the "schedule" field.
-func ScheduleGTE(v time.Time) predicate.User {
+func ScheduleGTE(v string) predicate.User {
 	return predicate.User(sql.FieldGTE(FieldSchedule, v))
 }
 
 // ScheduleLT applies the LT predicate on the "schedule" field.
-func ScheduleLT(v time.Time) predicate.User {
+func ScheduleLT(v string) predicate.User {
 	return predicate.User(sql.FieldLT(FieldSchedule, v))
 }
 
 // ScheduleLTE applies the LTE predicate on the "schedule" field.
-func ScheduleLTE(v time.Time) predicate.User {
+func ScheduleLTE(v string) predicate.User {
 	return predicate.User(sql.FieldLTE(FieldSchedule, v))
+}
+
+// ScheduleContains applies the Contains predicate on the "schedule" field.
+func ScheduleContains(v string) predicate.User {
+	return predicate.User(sql.FieldContains(FieldSchedule, v))
+}
+
+// ScheduleHasPrefix applies the HasPrefix predicate on the "schedule" field.
+func ScheduleHasPrefix(v string) predicate.User {
+	return predicate.User(sql.FieldHasPrefix(FieldSchedule, v))
+}
+
+// ScheduleHasSuffix applies the HasSuffix predicate on the "schedule" field.
+func ScheduleHasSuffix(v string) predicate.User {
+	return predicate.User(sql.FieldHasSuffix(FieldSchedule, v))
+}
+
+// ScheduleEqualFold applies the EqualFold predicate on the "schedule" field.
+func ScheduleEqualFold(v string) predicate.User {
+	return predicate.User(sql.FieldEqualFold(FieldSchedule, v))
+}
+
+// ScheduleContainsFold applies the ContainsFold predicate on the "schedule" field.
+func ScheduleContainsFold(v string) predicate.User {
+	return predicate.User(sql.FieldContainsFold(FieldSchedule, v))
 }
 
 // And groups predicates with the AND operator between them.

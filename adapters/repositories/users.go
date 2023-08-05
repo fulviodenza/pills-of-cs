@@ -3,7 +3,6 @@ package adapters
 import (
 	"context"
 	"log"
-	"time"
 
 	"github.com/pills-of-cs/adapters/ent"
 	"github.com/pills-of-cs/adapters/ent/user"
@@ -50,7 +49,7 @@ func (ur *UserRepo) AddTagsToUser(ctx context.Context, id string, topics []strin
 	return nil
 }
 
-func (ur *UserRepo) SaveSchedule(ctx context.Context, id string, schedule time.Time) error {
+func (ur *UserRepo) SaveSchedule(ctx context.Context, id string, schedule string) error {
 
 	userEl, err := ur.User.Query().
 		Where(user.IDEQ(id)).

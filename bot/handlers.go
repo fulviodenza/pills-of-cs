@@ -158,7 +158,7 @@ func (b Bot) SchedulePill(ctx context.Context, up *objects.Update) error {
 
 	// save the schedule to db
 	b.Schedules[id] = sched
-	err = b.UserRepo.SaveSchedule(ctx, id, sched)
+	err = b.UserRepo.SaveSchedule(ctx, id, sched.String())
 	if err != nil {
 		log.Fatalf("[SchedulePill]: failed saving time: %v", err.Error())
 		return err

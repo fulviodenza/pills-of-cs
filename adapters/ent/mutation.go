@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/pills-of-cs/adapters/ent/predicate"
 	"github.com/pills-of-cs/adapters/ent/user"
@@ -36,7 +35,7 @@ type UserMutation struct {
 	id               *string
 	categories       *[]string
 	appendcategories []string
-	schedule         *time.Time
+	schedule         *string
 	clearedFields    map[string]struct{}
 	done             bool
 	oldValue         func(context.Context) (*User, error)
@@ -213,12 +212,12 @@ func (m *UserMutation) ResetCategories() {
 }
 
 // SetSchedule sets the "schedule" field.
-func (m *UserMutation) SetSchedule(t time.Time) {
-	m.schedule = &t
+func (m *UserMutation) SetSchedule(s string) {
+	m.schedule = &s
 }
 
 // Schedule returns the value of the "schedule" field in the mutation.
-func (m *UserMutation) Schedule() (r time.Time, exists bool) {
+func (m *UserMutation) Schedule() (r string, exists bool) {
 	v := m.schedule
 	if v == nil {
 		return
@@ -229,7 +228,7 @@ func (m *UserMutation) Schedule() (r time.Time, exists bool) {
 // OldSchedule returns the old "schedule" field's value of the User entity.
 // If the User object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserMutation) OldSchedule(ctx context.Context) (v time.Time, err error) {
+func (m *UserMutation) OldSchedule(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldSchedule is only allowed on UpdateOne operations")
 	}
@@ -331,7 +330,7 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 		m.SetCategories(v)
 		return nil
 	case user.FieldSchedule:
-		v, ok := value.(time.Time)
+		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
