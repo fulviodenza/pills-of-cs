@@ -49,7 +49,7 @@ func TestValidateTime(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := ValidateTime(tt.args.times); got != tt.want {
+			if got := ValidateTime(tt.args.times, "Europe/Rome"); got != tt.want {
 				t.Errorf("ValidateTime() = %v, want %v", got, tt.want)
 			}
 		})

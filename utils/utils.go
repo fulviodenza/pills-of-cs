@@ -33,7 +33,7 @@ func AggregateTags(tags []string) string {
 	return msg
 }
 
-func ValidateTime(times []string) bool {
+func ValidateTime(times []string, tz string) bool {
 	// the only accepted format is HH:MM, so, with 2 elements in the times array
 	if len(times) != 2 {
 		return false
@@ -44,6 +44,12 @@ func ValidateTime(times []string) bool {
 		return false
 	}
 	minutes, err := strconv.Atoi(times[1])
+	if err != nil {
+		return false
+	}
+
+	// validate timezone
+	_, err = time.LoadLocation(tz)
 	if err != nil {
 		return false
 	}
