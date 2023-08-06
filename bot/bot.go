@@ -85,7 +85,7 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 	client, err := ent.SetupAndConnectDatabase(databaseUrl)
 	fmt.Println(client)
 	if err != nil {
-		log.Fatalf("[ent.SetupAndConnectDatabase]: error in db setup or connection: %v", err.Error())
+		log.Printf("[ent.SetupAndConnectDatabase]: error in db setup or connection: %v", err.Error())
 	}
 
 	bot_config := &cfg.BotConfigs{

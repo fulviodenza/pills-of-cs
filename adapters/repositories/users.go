@@ -24,13 +24,13 @@ func (ur *UserRepo) AddTagsToUser(ctx context.Context, id string, topics []strin
 			SetSchedule("").
 			Exec(ctx)
 		if err != nil {
-			log.Fatalf("[ur.User.Create]: error executing the query: %v", err)
+			log.Printf("[ur.User.Create]: error executing the query: %v", err)
 			return err
 		}
 	}
 	if err != nil {
 		if _, ok := err.(*ent.NotFoundError); !ok {
-			log.Fatalf("[ur.User.Create]: error executing the query: %v", err)
+			log.Printf("[ur.User.Create]: error executing the query: %v", err)
 			return err
 		}
 	}
@@ -42,7 +42,7 @@ func (ur *UserRepo) AddTagsToUser(ctx context.Context, id string, topics []strin
 		err = ur.User.Update().SetCategories(userEl.Categories).Where(user.IDEQ(userEl.ID)).Exec(ctx)
 
 		if err != nil {
-			log.Fatalf("[ur.User.Update]: error executing the query: %v", err)
+			log.Printf("[ur.User.Update]: error executing the query: %v", err)
 			return err
 		}
 	}
@@ -61,20 +61,21 @@ func (ur *UserRepo) SaveSchedule(ctx context.Context, id string, schedule string
 			SetSchedule(schedule).
 			Exec(ctx)
 		if err != nil {
-			log.Fatalf("[ur.User.Create]: error executing the query: %v", err)
+			log.Printf("[ur.User.Create]: error executing the query: %v", err)
 			return err
 		}
 	}
 	if err != nil {
 		if _, ok := err.(*ent.NotFoundError); !ok {
-			log.Fatalf("[ur.User.Create]: error executing the query: %v", err)
+			log.Printf("[ur.User.Create]: error executing the query: %v", err)
 			return err
 		}
 	}
 
 	err = ur.User.Update().SetSchedule(schedule).Where(user.IDEQ(id)).Exec(ctx)
 	if err != nil {
-		log.Fatalf("[ur.User.Update]: error executing the query: %v", err)
+		log.Printf("[ur.User.Update]: error executing the query: %v", err)
+		return err
 	}
 
 	return nil

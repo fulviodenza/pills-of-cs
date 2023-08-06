@@ -26,29 +26,22 @@ type IBot interface {
 	SchedulePill(ctx context.Context, up *objects.Update)
 }
 
-func (b *Bot) Run(ctx context.Context, up *objects.Update) {
-	_, err := b.Bot.SendMessage(up.Message.Chat.Id, "Welcome to the pills-of-cs bot! Press `/pill` to request a pill or `/help` to get informations about the bot", "", 0, false, false)
+func (b *Bot) sendMessage(msg string, up *objects.Update) {
+	_, err := b.Bot.SendMessage(up.Message.Chat.Id, msg, "", 0, false, false)
 	if err != nil {
-		log.Printf("[Run]: failed sending message: %v", err.Error())
+		log.Printf("[SendMessage]: sending message to user: %v", err.Error())
 	}
+}
+
+func (b *Bot) Run(ctx context.Context, up *objects.Update) {
+	b.sendMessage("Welcome to the pills-of-cs bot! Press `/pill` to request a pill or `/help` to get informations about the bot", up)
 }
 
 func (b *Bot) Pill(ctx context.Context, up *objects.Update) {
-	msg, err := b.pill(ctx, up)
-	if err != nil {
-		log.Printf("[Pill]: failed building message: %v", err.Error())
-	}
-	_, err = b.Bot.SendMessage(up.Message.Chat.Id, msg, "", 0, false, false)
-	if err != nil {
-		log.Printf("[Pill]: failed sending message: %v", err.Error())
-	}
-}
-
-func (b *Bot) pill(ctx context.Context, up *objects.Update) (msg string, err error) {
+	var msg string
 	subscribedTags, err := b.UserRepo.GetTagsByUserId(ctx, strconv.Itoa(up.Message.Chat.Id))
 	if err != nil {
-		log.Fatalf("[Pill]: failed getting tags: %v", err.Error())
-		return "", err
+		log.Printf("[Pill]: failed getting tags: %v", err.Error())
 	}
 
 	var randomCategory, randomIndex int64
@@ -64,71 +57,40 @@ func (b *Bot) pill(ctx context.Context, up *objects.Update) (msg string, err err
 		randomIndex = utils.MakeTimestamp(len(randomCategoryP))
 		msg = randomCategoryP[randomIndex].Title + ": " + randomCategoryP[randomIndex].Body
 	}
-	return msg, nil
+	b.sendMessage(msg, up)
 }
 
 func (b *Bot) Help(ctx context.Context, up *objects.Update) {
-	_, err := b.Bot.SendMessage(up.Message.Chat.Id, string(b.HelpMessage), "Markdown", 0, false, false)
-	if err != nil {
-		log.Printf("[Help]: failed sending message: %v", err.Error())
-	}
+	b.sendMessage(string(b.HelpMessage), up)
 }
 
 func (b *Bot) GetTags(ctx context.Context, up *objects.Update) {
-	_, err := b.Bot.SendMessage(up.Message.Chat.Id, b.getTags(ctx, up), "Markdown", 0, false, false)
-	if err != nil {
-		log.Printf("[GetTags]: failed sending message: %v", err.Error())
-	}
-}
-
-func (b *Bot) getTags(ctx context.Context, up *objects.Update) (msg string) {
-	msg = ""
+	var msg = ""
 	for k := range b.Categories {
 		msg += fmt.Sprintf("- %s\n", k)
 	}
-	return msg
+	if len(b.Categories) == 0 {
+		msg = "empty categories"
+	}
+	b.sendMessage(msg, up)
 }
 
 func (b *Bot) GetSubscribedTags(ctx context.Context, up *objects.Update) {
-	msg, err := b.getSubscribedTags(ctx, up)
-	if err != nil {
-		log.Fatalf("[GetSubscribedTags]: failed building message: %v", err.Error())
-	}
-	_, err = b.Bot.SendMessage(up.Message.Chat.Id, msg, "Markdown", 0, false, false)
-	if err != nil {
-		log.Fatalf("[GetSubscribedTags]: failed sending message: %v", err.Error())
-	}
-}
-
-func (b *Bot) getSubscribedTags(ctx context.Context, up *objects.Update) (msg string, err error) {
 	tags, err := b.UserRepo.GetTagsByUserId(ctx, strconv.Itoa(up.Message.Chat.Id))
 	if err != nil {
-		log.Fatalf("[getSubscribedTags]: failed getting tags by user id: %v", err.Error())
-		return "", err
+		log.Printf("[getSubscribedTags]: failed getting tags by user id: %v", err.Error())
 	}
-
-	return utils.AggregateTags(tags), nil
+	b.sendMessage(utils.AggregateTags(tags), up)
 }
 
 func (b *Bot) ChooseTags(ctx context.Context, up *objects.Update) {
-	msg, err := b.chooseTags(ctx, up)
-	if err != nil {
-		log.Printf("[ChooseTags]: failed building message: %v", err.Error())
-	}
-	_, err = b.Bot.SendMessage(up.Message.Chat.Id, msg, "Markdown", 0, false, false)
-	if err != nil {
-		log.Printf("[ChooseTags]: failed adding tag to user: %v", err.Error())
-	}
-}
-
-func (b *Bot) chooseTags(ctx context.Context, up *objects.Update) (msg string, err error) {
 	// /cmd args[0] args[1]
 	args := strings.SplitN(up.Message.Text, " ", -1)
 
 	// Replacing the underscores with spaces in the arguments.
 	// This is done for more-than-one-word tags.
 	// Indeed, /choose_tags command requires:
-	///choose_tags distributed_systems for example
+	// /choose_tags distributed_systems for example
 	for i, a := range args {
 		if strings.Contains(a, "_") {
 			twoWordArg := strings.SplitN(a, "_", 2)
@@ -136,49 +98,33 @@ func (b *Bot) chooseTags(ctx context.Context, up *objects.Update) (msg string, e
 		}
 	}
 
-	err = b.UserRepo.AddTagsToUser(ctx, strconv.Itoa(up.Message.Chat.Id), args[1:])
+	err := b.UserRepo.AddTagsToUser(ctx, strconv.Itoa(up.Message.Chat.Id), args[1:])
 	if err != nil {
-		log.Fatalf("[ChooseTags]: failed adding tag to user: %v", err.Error())
-		return "", err
+		log.Printf("[ChooseTags]: failed adding tag to user: %v", err.Error())
 	}
 
 	log.Printf("[ChooseTags]: return operation exit")
-	return "tags updated", nil
+	b.sendMessage("tags updated", up)
 }
 
-// /schedule_pill 08:00
 func (b *Bot) SchedulePill(ctx context.Context, up *objects.Update) {
-	msg, err := b.schedulePill(ctx, up)
-	if err != nil {
-		log.Printf("[SchedulePill]: failed building message: %v", err.Error())
-	}
-
-	_, err = b.Bot.SendMessage(up.Message.Chat.Id, msg, "Markdown", 0, false, false)
-	if err != nil {
-		log.Printf("[SchedulePill]: failed sending message: %v", err.Error())
-	}
-}
-
-func (b *Bot) schedulePill(ctx context.Context, up *objects.Update) (msg string, err error) {
+	var msg string
 	id := strconv.Itoa(up.Message.Chat.Id)
 	// args[1] contains the time HH:MM, args[2] contains the timezone
 	args := strings.SplitN(up.Message.Text, " ", -1)
 
 	if len(args) != 3 {
 		msg = "Failed parsing provided time"
-		return msg, nil
 	}
 	crontab, err := parser.ParseSchedule(args[1], args[2])
 	if err != nil {
 		msg = "Failed parsing provided time"
-		return msg, err
 	}
 
 	err = b.UserRepo.SaveSchedule(ctx, id, crontab)
 	if err != nil {
-		log.Fatalf("[SchedulePill]: failed saving time: %v", err.Error())
+		log.Printf("[SchedulePill]: failed saving time: %v", err.Error())
 		msg = "failed saving time"
-		return msg, err
 	}
 
 	// run the goroutine with the cron
@@ -199,5 +145,5 @@ func (b *Bot) schedulePill(ctx context.Context, up *objects.Update) (msg string,
 
 	// the human readable format is with times[0] (hours] first
 	msg = fmt.Sprintf("Crontab for you pill `%s`", crontab)
-	return msg, nil
+	b.sendMessage(msg, up)
 }
