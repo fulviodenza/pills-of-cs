@@ -11,6 +11,7 @@ import (
 
 	"github.com/SakoDroid/telego/objects"
 	"github.com/pills-of-cs/entities"
+	"github.com/pills-of-cs/parser"
 	"github.com/pills-of-cs/utils"
 )
 
@@ -146,24 +147,40 @@ func (b *Bot) ChooseTags(ctx context.Context, up *objects.Update) error {
 
 // /schedule_pill 08:00
 func (b *Bot) SchedulePill(ctx context.Context, up *objects.Update) error {
+	var message string
+
 	id := strconv.Itoa(up.Message.Chat.Id)
-
-	// args[1] contains the time HH:MM
+	// args[1] contains the time HH:MM, args[2] contains the timezone
 	args := strings.SplitN(up.Message.Text, " ", -1)
-	sched := args[1]
 
-	err := b.UserRepo.SaveSchedule(ctx, id, sched)
+	if len(args) != 3 {
+		message = "Failed parsing provided time"
+		_, err := b.Bot.SendMessage(up.Message.Chat.Id, message, "Markdown", up.Message.MessageId, false, false)
+		if err != nil {
+			log.Fatalf("[SchedulePill]: failed sending message: %v", err.Error())
+			return err
+		}
+		return nil
+	}
+	crontab, err := parser.ParseSchedule(args[1], args[2])
+	if err != nil {
+		message = "Failed parsing provided time"
+		_, err = b.Bot.SendMessage(up.Message.Chat.Id, message, "Markdown", up.Message.MessageId, false, false)
+		if err != nil {
+			log.Fatalf("[SchedulePill]: failed sending message: %v", err.Error())
+			return err
+		}
+		return err
+	}
+
+	err = b.UserRepo.SaveSchedule(ctx, id, args[1])
 	if err != nil {
 		log.Fatalf("[SchedulePill]: failed saving time: %v", err.Error())
 		return err
 	}
 
-	// times contains an array with two elements [Hours, Minutes]
-	times := strings.SplitN(sched, ":", -1)
-	// in the crontab minutes come as first field
-	crontab := fmt.Sprintf("%s %s * * *", times[1], times[0])
 	// the human readable format is with times[0] (hours] first
-	message := fmt.Sprintf("I'll send you a pill every day at: %s:%s", times[0], times[1])
+	message = fmt.Sprintf("Crontab for you pill `%s`", crontab)
 	_, err = b.Bot.SendMessage(up.Message.Chat.Id, message, "Markdown", up.Message.MessageId, false, false)
 	if err != nil {
 		log.Fatalf("[SchedulePill]: failed sending message: %v", err.Error())
