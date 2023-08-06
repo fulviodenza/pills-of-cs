@@ -18,35 +18,30 @@ import (
 var _ IBot = (*Bot)(nil)
 
 type IBot interface {
-	Run(ctx context.Context, up *objects.Update) error
-	Pill(ctx context.Context, up *objects.Update) error
-	Help(ctx context.Context, up *objects.Update) error
-	ChooseTags(ctx context.Context, up *objects.Update) error
-	GetTags(ctx context.Context, up *objects.Update) error
-	SchedulePill(ctx context.Context, up *objects.Update) error
+	Run(ctx context.Context, up *objects.Update)
+	Pill(ctx context.Context, up *objects.Update)
+	Help(ctx context.Context, up *objects.Update)
+	ChooseTags(ctx context.Context, up *objects.Update)
+	GetTags(ctx context.Context, up *objects.Update)
+	SchedulePill(ctx context.Context, up *objects.Update)
 }
 
-func (b *Bot) Run(ctx context.Context, up *objects.Update) error {
-	_, err := b.Bot.SendMessage(up.Message.Chat.Id, "Welcome to the pills-of-cs bot! Press `/pill` to request a pill or `/help` to get informations about the bot", "Markdown", up.Message.MessageId, false, false)
+func (b *Bot) Run(ctx context.Context, up *objects.Update) {
+	_, err := b.Bot.SendMessage(up.Message.Chat.Id, "Welcome to the pills-of-cs bot! Press `/pill` to request a pill or `/help` to get informations about the bot", "", 0, false, false)
 	if err != nil {
-		log.Fatalf("[Run]: failed sending message: %v", err.Error())
-		return err
+		log.Printf("[Run]: failed sending message: %v", err.Error())
 	}
-	return nil
 }
 
-func (b *Bot) Pill(ctx context.Context, up *objects.Update) error {
+func (b *Bot) Pill(ctx context.Context, up *objects.Update) {
 	msg, err := b.pill(ctx, up)
 	if err != nil {
-		log.Fatalf("[Pill]: failed building message: %v", err.Error())
-		return err
+		log.Printf("[Pill]: failed building message: %v", err.Error())
 	}
-	_, err = b.Bot.SendMessage(up.Message.Chat.Id, msg, "Markdown", up.Message.MessageId, false, false)
+	_, err = b.Bot.SendMessage(up.Message.Chat.Id, msg, "", 0, false, false)
 	if err != nil {
-		log.Fatalf("[Pill]: failed sending message: %v", err.Error())
-		return err
+		log.Printf("[Pill]: failed sending message: %v", err.Error())
 	}
-	return nil
 }
 
 func (b *Bot) pill(ctx context.Context, up *objects.Update) (msg string, err error) {
@@ -72,22 +67,18 @@ func (b *Bot) pill(ctx context.Context, up *objects.Update) (msg string, err err
 	return msg, nil
 }
 
-func (b *Bot) Help(ctx context.Context, up *objects.Update) error {
-	_, err := b.Bot.SendMessage(up.Message.Chat.Id, string(b.HelpMessage), "Markdown", up.Message.MessageId, false, false)
+func (b *Bot) Help(ctx context.Context, up *objects.Update) {
+	_, err := b.Bot.SendMessage(up.Message.Chat.Id, string(b.HelpMessage), "Markdown", 0, false, false)
 	if err != nil {
-		log.Fatalf("[Help]: failed sending message: %v", err.Error())
-		return err
+		log.Printf("[Help]: failed sending message: %v", err.Error())
 	}
-	return nil
 }
 
-func (b *Bot) GetTags(ctx context.Context, up *objects.Update) error {
-	_, err := b.Bot.SendMessage(up.Message.Chat.Id, b.getTags(ctx, up), "Markdown", up.Message.MessageId, false, false)
+func (b *Bot) GetTags(ctx context.Context, up *objects.Update) {
+	_, err := b.Bot.SendMessage(up.Message.Chat.Id, b.getTags(ctx, up), "Markdown", 0, false, false)
 	if err != nil {
-		log.Fatalf("[GetTags]: failed sending message: %v", err.Error())
-		return err
+		log.Printf("[GetTags]: failed sending message: %v", err.Error())
 	}
-	return nil
 }
 
 func (b *Bot) getTags(ctx context.Context, up *objects.Update) (msg string) {
@@ -98,18 +89,15 @@ func (b *Bot) getTags(ctx context.Context, up *objects.Update) (msg string) {
 	return msg
 }
 
-func (b *Bot) GetSubscribedTags(ctx context.Context, up *objects.Update) error {
+func (b *Bot) GetSubscribedTags(ctx context.Context, up *objects.Update) {
 	msg, err := b.getSubscribedTags(ctx, up)
 	if err != nil {
 		log.Fatalf("[GetSubscribedTags]: failed building message: %v", err.Error())
-		return err
 	}
-	_, err = b.Bot.SendMessage(up.Message.Chat.Id, msg, "Markdown", up.Message.MessageId, false, false)
+	_, err = b.Bot.SendMessage(up.Message.Chat.Id, msg, "Markdown", 0, false, false)
 	if err != nil {
 		log.Fatalf("[GetSubscribedTags]: failed sending message: %v", err.Error())
-		return err
 	}
-	return nil
 }
 
 func (b *Bot) getSubscribedTags(ctx context.Context, up *objects.Update) (msg string, err error) {
@@ -122,18 +110,15 @@ func (b *Bot) getSubscribedTags(ctx context.Context, up *objects.Update) (msg st
 	return utils.AggregateTags(tags), nil
 }
 
-func (b *Bot) ChooseTags(ctx context.Context, up *objects.Update) error {
+func (b *Bot) ChooseTags(ctx context.Context, up *objects.Update) {
 	msg, err := b.chooseTags(ctx, up)
 	if err != nil {
-		log.Fatalf("[ChooseTags]: failed building message: %v", err.Error())
-		return err
+		log.Printf("[ChooseTags]: failed building message: %v", err.Error())
 	}
-	_, err = b.Bot.SendMessage(up.Message.Chat.Id, msg, "Markdown", up.Message.MessageId, false, false)
+	_, err = b.Bot.SendMessage(up.Message.Chat.Id, msg, "Markdown", 0, false, false)
 	if err != nil {
-		log.Fatalf("[ChooseTags]: failed adding tag to user: %v", err.Error())
-		return err
+		log.Printf("[ChooseTags]: failed adding tag to user: %v", err.Error())
 	}
-	return nil
 }
 
 func (b *Bot) chooseTags(ctx context.Context, up *objects.Update) (msg string, err error) {
@@ -162,20 +147,16 @@ func (b *Bot) chooseTags(ctx context.Context, up *objects.Update) (msg string, e
 }
 
 // /schedule_pill 08:00
-func (b *Bot) SchedulePill(ctx context.Context, up *objects.Update) error {
+func (b *Bot) SchedulePill(ctx context.Context, up *objects.Update) {
 	msg, err := b.schedulePill(ctx, up)
 	if err != nil {
-		log.Fatalf("[SchedulePill]: failed building message: %v", err.Error())
-		return err
+		log.Printf("[SchedulePill]: failed building message: %v", err.Error())
 	}
 
-	_, err = b.Bot.SendMessage(up.Message.Chat.Id, msg, "Markdown", up.Message.MessageId, false, false)
+	_, err = b.Bot.SendMessage(up.Message.Chat.Id, msg, "Markdown", 0, false, false)
 	if err != nil {
-		log.Fatalf("[SchedulePill]: failed sending message: %v", err.Error())
-		return err
+		log.Printf("[SchedulePill]: failed sending message: %v", err.Error())
 	}
-
-	return nil
 }
 
 func (b *Bot) schedulePill(ctx context.Context, up *objects.Update) (msg string, err error) {

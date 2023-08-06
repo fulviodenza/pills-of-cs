@@ -41,6 +41,8 @@ var (
 )
 
 var PRIVATE_CHAT_TYPE = "private"
+var GROUP_CHAT_TYPE = "group"
+var SUPERGROUP_CHAT_TYPE = "supergroup"
 
 var (
 	databaseUrl   string
@@ -65,7 +67,7 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 	}
 
 	sp := entities.SerializedPills{}
-	err = json.Unmarshal(dst, &sp)
+	json.Unmarshal(dst, &sp)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -152,48 +154,53 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 }
 
 func (b *Bot) Start(ctx context.Context) error {
+
+	updateCh := b.Bot.GetUpdateChannel()
+	go func() {
+		for {
+			update := <-*updateCh
+			log.Printf("got update: %v\n", update.Update_id)
+		}
+	}()
 	var err error
 	b.Bot.AddHandler(COMMAND_START, func(u *objs.Update) {
-		err = b.Run(ctx, u)
+		b.Run(ctx, u)
 		if err != nil {
 			log.Printf("[Start]: %v\n", err)
 		}
-	}, PRIVATE_CHAT_TYPE)
+	}, PRIVATE_CHAT_TYPE, GROUP_CHAT_TYPE, SUPERGROUP_CHAT_TYPE)
 
 	b.Bot.AddHandler(COMMAND_PILL, func(u *objs.Update) {
-		err = b.Pill(ctx, u)
-		if err != nil {
-			log.Printf("[Start]: %v\n", err)
-		}
-	}, PRIVATE_CHAT_TYPE)
+		b.Pill(ctx, u)
+	}, PRIVATE_CHAT_TYPE, GROUP_CHAT_TYPE, SUPERGROUP_CHAT_TYPE)
 
 	b.Bot.AddHandler(COMMAND_HELP, func(u *objs.Update) {
-		err = b.Help(ctx, u)
+		b.Help(ctx, u)
 		if err != nil {
 			log.Printf("[Start]: %v\n", err)
 		}
-	}, PRIVATE_CHAT_TYPE)
+	}, PRIVATE_CHAT_TYPE, GROUP_CHAT_TYPE, SUPERGROUP_CHAT_TYPE)
 
 	b.Bot.AddHandler(COMMAND_CHOOSE_TAGS, func(u *objs.Update) {
-		err = b.ChooseTags(ctx, u)
+		b.ChooseTags(ctx, u)
 		if err != nil {
 			log.Printf("[Start]: %v\n", err)
 		}
-	}, PRIVATE_CHAT_TYPE)
+	}, PRIVATE_CHAT_TYPE, GROUP_CHAT_TYPE, SUPERGROUP_CHAT_TYPE)
 
 	b.Bot.AddHandler(COMMAND_GET_SUBSCRIBED_CATEGORIES, func(u *objs.Update) {
-		err = b.GetSubscribedTags(ctx, u)
+		b.GetSubscribedTags(ctx, u)
 		if err != nil {
 			log.Printf("[Start]: %v\n", err)
 		}
-	}, PRIVATE_CHAT_TYPE)
+	}, PRIVATE_CHAT_TYPE, GROUP_CHAT_TYPE, SUPERGROUP_CHAT_TYPE)
 
 	b.Bot.AddHandler(COMMAND_SCHEDULE_PILL, func(u *objs.Update) {
-		err = b.SchedulePill(ctx, u)
+		b.SchedulePill(ctx, u)
 		if err != nil {
 			log.Printf("[Start]: %v\n", err)
 		}
-	}, PRIVATE_CHAT_TYPE)
+	}, PRIVATE_CHAT_TYPE, GROUP_CHAT_TYPE, SUPERGROUP_CHAT_TYPE)
 
 	return err
 }
