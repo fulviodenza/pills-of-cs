@@ -27,12 +27,12 @@ func Parse(filename string, dst *[]byte) ([]byte, error) {
 	return *dst, nil
 }
 
-func ParseSchedule(s string) (string, error) {
+func ParseSchedule(s, tz string) (string, error) {
 	// times contains an array with two elements [Hours, Minutes]
 	times := strings.SplitN(s, ":", -1)
 	// in the crontab minutes come as first field
-	if !utils.ValidateTime(times) {
+	if !utils.ValidateTime(times, tz) {
 		return "", fmt.Errorf("error validating time")
 	}
-	return fmt.Sprintf("%s %s * * *", times[1], times[0]), nil
+	return fmt.Sprintf("CRON_TZ=%s %s %s * * *", tz, times[1], times[0]), nil
 }

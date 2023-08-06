@@ -147,13 +147,22 @@ func (b *Bot) ChooseTags(ctx context.Context, up *objects.Update) error {
 
 // /schedule_pill 08:00
 func (b *Bot) SchedulePill(ctx context.Context, up *objects.Update) error {
-	id := strconv.Itoa(up.Message.Chat.Id)
+	var message string
 
-	// args[1] contains the time HH:MM
+	id := strconv.Itoa(up.Message.Chat.Id)
+	// args[1] contains the time HH:MM, args[2] contains the timezone
 	args := strings.SplitN(up.Message.Text, " ", -1)
 
-	var message string
-	crontab, err := parser.ParseSchedule(args[1])
+	if len(args) != 3 {
+		message = "Failed parsing provided time"
+		_, err := b.Bot.SendMessage(up.Message.Chat.Id, message, "Markdown", up.Message.MessageId, false, false)
+		if err != nil {
+			log.Fatalf("[SchedulePill]: failed sending message: %v", err.Error())
+			return err
+		}
+		return nil
+	}
+	crontab, err := parser.ParseSchedule(args[1], args[2])
 	if err != nil {
 		message = "Failed parsing provided time"
 		_, err = b.Bot.SendMessage(up.Message.Chat.Id, message, "Markdown", up.Message.MessageId, false, false)
