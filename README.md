@@ -21,3 +21,4 @@ commands available for this bot, for now are:
 - [ ] `/schedule_news`: to schedule the receive of a set of news over various topics
 - [ ] `/quiz`: to get a quiz to get preparated over a set of topics
 - [ ] `/interview_tips`: to get some tips about interviews
+- [ ] `/podcast`: get latest episodes from podcasts about computer science
