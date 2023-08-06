@@ -160,8 +160,10 @@ func (b *Bot) SchedulePill(ctx context.Context, up *objects.Update) error {
 
 	// times contains an array with two elements [Hours, Minutes]
 	times := strings.SplitN(sched, ":", -1)
+	// in the crontab minutes come as first field
 	crontab := fmt.Sprintf("%s %s * * *", times[1], times[0])
-	message := fmt.Sprintf("I'll send you a pill every day at: %s:%s", times[1], times[0])
+	// the human readable format is with times[0] (hours] first
+	message := fmt.Sprintf("I'll send you a pill every day at: %s:%s", times[0], times[1])
 	_, err = b.Bot.SendMessage(up.Message.Chat.Id, message, "Markdown", up.Message.MessageId, false, false)
 	if err != nil {
 		log.Fatalf("[SchedulePill]: failed sending message: %v", err.Error())
