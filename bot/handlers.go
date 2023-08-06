@@ -158,16 +158,15 @@ func (b *Bot) SchedulePill(ctx context.Context, up *objects.Update) error {
 		return err
 	}
 
-	message := fmt.Sprintf("I'll send you a pill every day at: %s", sched)
+	// times contains an array with two elements [Hours, Minutes]
+	times := strings.SplitN(sched, ":", -1)
+	crontab := fmt.Sprintf("%s %s * * *", times[1], times[0])
+	message := fmt.Sprintf("I'll send you a pill every day at: %s:%s", times[1], times[0])
 	_, err = b.Bot.SendMessage(up.Message.Chat.Id, message, "Markdown", up.Message.MessageId, false, false)
 	if err != nil {
 		log.Fatalf("[SchedulePill]: failed sending message: %v", err.Error())
 		return err
 	}
-
-	// times contains an array with two elements [Hours, Minutes]
-	times := strings.SplitN(sched, ":", -1)
-	crontab := fmt.Sprintf("%s %s * * *", times[1], times[0])
 
 	// run the goroutine with the cron
 	go func(ctx context.Context, u *objects.Update) {
