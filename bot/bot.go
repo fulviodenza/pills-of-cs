@@ -6,20 +6,19 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
+	"strconv"
 	"time"
 
-	"github.com/go-co-op/gocron"
 	"github.com/pills-of-cs/adapters/ent"
 	repositories "github.com/pills-of-cs/adapters/repositories"
-	"github.com/pills-of-cs/parser"
-
 	"github.com/pills-of-cs/entities"
+	"github.com/pills-of-cs/parser"
 
 	bt "github.com/SakoDroid/telego"
 	cfg "github.com/SakoDroid/telego/configs"
-	"github.com/SakoDroid/telego/objects"
+	objs "github.com/SakoDroid/telego/objects"
 	"github.com/jomei/notionapi"
+	"github.com/robfig/cron/v3"
 )
 
 // APIs constants
@@ -31,6 +30,17 @@ const (
 	HELP_MESSAGE_ASSET = "./assets/help_message.txt"
 	DATABASE_URL       = "DATABASE_URL"
 )
+
+var (
+	COMMAND_START                     = "/start"
+	COMMAND_PILL                      = "/pill"
+	COMMAND_HELP                      = "/help"
+	COMMAND_CHOOSE_TAGS               = "/choose_tags"
+	COMMAND_GET_SUBSCRIBED_CATEGORIES = "get_subscribed_categories"
+	COMMAND_SCHEDULE_PILL             = "/schedule_pill"
+)
+
+var PRIVATE_CHAT_TYPE = "private"
 
 var (
 	databaseUrl   string
@@ -47,6 +57,7 @@ type Bot struct {
 var _ entities.IBot = (*Bot)(nil)
 
 func NewBotWithConfig() (*Bot, *ent.Client, error) {
+	ctx := context.Background()
 	var dst []byte
 	_, err := parser.Parse(PILLS_ASSET, &dst)
 	if err != nil {
@@ -75,18 +86,15 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 		log.Fatalf("[ent.SetupAndConnectDatabase]: error in db setup or connection: %v", err.Error())
 	}
 
-	// Configure telegram bot
-	cf := cfg.DefaultUpdateConfigs()
-
-	bot_config := cfg.BotConfigs{
+	bot_config := &cfg.BotConfigs{
 		BotAPI:         cfg.DefaultBotAPI,
 		APIKey:         telegramToken,
-		UpdateConfigs:  cf,
+		UpdateConfigs:  cfg.DefaultUpdateConfigs(),
 		Webhook:        false,
 		LogFileAddress: cfg.DefaultLogFile,
 	}
 
-	b, err := bt.NewBot(&bot_config)
+	b, err := bt.NewBot(bot_config)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -101,49 +109,91 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 		}
 	}
 
-	s := gocron.NewScheduler(time.UTC)
+	userRepo := repositories.UserRepo{
+		Client: client,
+	}
 
-	return &Bot{
+	bot := &Bot{
 		&entities.BotConf{
 			Bot:          *b,
 			NotionClient: *notion_client,
 			Pills:        sp.Pills,
 			Categories:   categories,
 			HelpMessage:  string(dst),
-			UserRepo: repositories.UserRepo{
-				Client: client,
-			},
-			Schedules: map[string]time.Time{},
-			Scheduler: s,
+			UserRepo:     userRepo,
+			Schedules:    map[string]time.Time{},
 		},
-	}, client, err
+	}
+
+	// setup the cron
+	s := cron.New()
+
+	// recovery crons from database
+	crontabs, err := userRepo.GetAllCrontabs(ctx)
+	for uid, cron := range crontabs {
+		userId, err := strconv.Atoi(uid)
+		if err != nil {
+			continue
+		}
+		s.AddFunc(cron, func() {
+			bot.Pill(context.Background(), &objs.Update{
+				Message: &objs.Message{
+					Chat: &objs.Chat{
+						Id: userId,
+					},
+				},
+			})
+		})
+	}
+	s.Start()
+	bot.Scheduler = s
+
+	return bot, client, err
 }
 
-func (b Bot) Start(ctx context.Context) error {
-	//Register the channel
-	messageChannel, _ := b.Bot.AdvancedMode().RegisterChannel("", "message")
+func (b *Bot) Start(ctx context.Context) error {
+	var err error
+	b.Bot.AddHandler(COMMAND_START, func(u *objs.Update) {
+		err = b.Run(ctx, u)
+		if err != nil {
+			log.Printf("[Start]: %v\n", err)
+		}
+	}, PRIVATE_CHAT_TYPE)
 
-	for {
-		up := <-*messageChannel
-		b.HandleMessage(ctx, up)
-	}
-}
+	b.Bot.AddHandler(COMMAND_PILL, func(u *objs.Update) {
+		err = b.Pill(ctx, u)
+		if err != nil {
+			log.Printf("[Start]: %v\n", err)
+		}
+	}, PRIVATE_CHAT_TYPE)
 
-func (ba Bot) HandleMessage(ctx context.Context, up *objects.Update) {
-	switch {
-	case strings.Contains(up.Message.Text, "/start"):
-		ba.Run(ctx, up)
-	case strings.Contains(up.Message.Text, "/pill"):
-		ba.Pill(ctx, up)
-	case strings.Contains(up.Message.Text, "/help"):
-		ba.Help(ctx, up)
-	case strings.Contains(up.Message.Text, "/choose_tags"):
-		ba.ChooseTags(ctx, up)
-	case strings.Contains(up.Message.Text, "/get_tags"):
-		ba.GetTags(ctx, up)
-	case strings.Contains(up.Message.Text, "/get_subscribed_categories"):
-		ba.GetSubscribedTags(ctx, up)
-	case strings.Contains(up.Message.Text, "/schedule_pill"):
-		ba.SchedulePill(ctx, up)
-	}
+	b.Bot.AddHandler(COMMAND_HELP, func(u *objs.Update) {
+		err = b.Help(ctx, u)
+		if err != nil {
+			log.Printf("[Start]: %v\n", err)
+		}
+	}, PRIVATE_CHAT_TYPE)
+
+	b.Bot.AddHandler(COMMAND_CHOOSE_TAGS, func(u *objs.Update) {
+		err = b.ChooseTags(ctx, u)
+		if err != nil {
+			log.Printf("[Start]: %v\n", err)
+		}
+	}, PRIVATE_CHAT_TYPE)
+
+	b.Bot.AddHandler(COMMAND_GET_SUBSCRIBED_CATEGORIES, func(u *objs.Update) {
+		err = b.GetSubscribedTags(ctx, u)
+		if err != nil {
+			log.Printf("[Start]: %v\n", err)
+		}
+	}, PRIVATE_CHAT_TYPE)
+
+	b.Bot.AddHandler(COMMAND_SCHEDULE_PILL, func(u *objs.Update) {
+		err = b.SchedulePill(ctx, u)
+		if err != nil {
+			log.Printf("[Start]: %v\n", err)
+		}
+	}, PRIVATE_CHAT_TYPE)
+
+	return err
 }
