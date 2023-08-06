@@ -100,6 +100,19 @@ func (ur *UserRepo) GetTagsByUserId(ctx context.Context, id string) ([]string, e
 	return user.Categories, err
 }
 
+func (ur UserRepo) GetAllCrontabs(ctx context.Context) (map[string]string, error) {
+	users, err := ur.Client.User.Query().All(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	crontabs := make(map[string]string, len(users))
+	for _, u := range users {
+		crontabs[u.ID] = u.Schedule
+	}
+	return crontabs, nil
+}
+
 func findCategoriesToAdd(s1, s2 []string) []string {
 	var toAdd []string
 

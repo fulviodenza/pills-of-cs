@@ -173,7 +173,7 @@ func (b *Bot) SchedulePill(ctx context.Context, up *objects.Update) error {
 		return err
 	}
 
-	err = b.UserRepo.SaveSchedule(ctx, id, args[1])
+	err = b.UserRepo.SaveSchedule(ctx, id, crontab)
 	if err != nil {
 		log.Fatalf("[SchedulePill]: failed saving time: %v", err.Error())
 		return err
