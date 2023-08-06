@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/pills-of-cs/adapters/ent"
@@ -56,6 +57,7 @@ type Bot struct {
 var _ entities.IBot = (*Bot)(nil)
 
 func NewBotWithConfig() (*Bot, *ent.Client, error) {
+	ctx := context.Background()
 	var dst []byte
 	_, err := parser.Parse(PILLS_ASSET, &dst)
 	if err != nil {
@@ -107,27 +109,50 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 		}
 	}
 
-	s := cron.New()
-	s.Start()
-	return &Bot{
+	userRepo := repositories.UserRepo{
+		Client: client,
+	}
+
+	bot := &Bot{
 		&entities.BotConf{
 			Bot:          *b,
 			NotionClient: *notion_client,
 			Pills:        sp.Pills,
 			Categories:   categories,
 			HelpMessage:  string(dst),
-			UserRepo: repositories.UserRepo{
-				Client: client,
-			},
-			Schedules: map[string]time.Time{},
-			Scheduler: s,
+			UserRepo:     userRepo,
+			Schedules:    map[string]time.Time{},
 		},
-	}, client, err
+	}
+
+	// setup the cron
+	s := cron.New()
+
+	// recovery crons from database
+	crontabs, err := userRepo.GetAllCrontabs(ctx)
+	for uid, cron := range crontabs {
+		userId, err := strconv.Atoi(uid)
+		if err != nil {
+			continue
+		}
+		s.AddFunc(cron, func() {
+			bot.Pill(context.Background(), &objs.Update{
+				Message: &objs.Message{
+					Chat: &objs.Chat{
+						Id: userId,
+					},
+				},
+			})
+		})
+	}
+	s.Start()
+	bot.Scheduler = s
+
+	return bot, client, err
 }
 
 func (b *Bot) Start(ctx context.Context) error {
 	var err error
-
 	b.Bot.AddHandler(COMMAND_START, func(u *objs.Update) {
 		err = b.Run(ctx, u)
 		if err != nil {
