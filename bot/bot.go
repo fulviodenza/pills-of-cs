@@ -16,6 +16,7 @@ import (
 
 	bt "github.com/SakoDroid/telego"
 	cfg "github.com/SakoDroid/telego/configs"
+	"github.com/SakoDroid/telego/objects"
 	objs "github.com/SakoDroid/telego/objects"
 	"github.com/jomei/notionapi"
 	"github.com/robfig/cron/v3"
@@ -153,8 +154,7 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 	return bot, client, err
 }
 
-func (b *Bot) Start(ctx context.Context) error {
-
+func (b *Bot) Start(ctx context.Context) {
 	updateCh := b.Bot.GetUpdateChannel()
 	go func() {
 		for {
@@ -162,45 +162,18 @@ func (b *Bot) Start(ctx context.Context) error {
 			log.Printf("got update: %v\n", update.Update_id)
 		}
 	}()
-	var err error
-	b.Bot.AddHandler(COMMAND_START, func(u *objs.Update) {
-		b.Run(ctx, u)
-		if err != nil {
-			log.Printf("[Start]: %v\n", err)
-		}
-	}, PRIVATE_CHAT_TYPE, GROUP_CHAT_TYPE, SUPERGROUP_CHAT_TYPE)
 
-	b.Bot.AddHandler(COMMAND_PILL, func(u *objs.Update) {
-		b.Pill(ctx, u)
-	}, PRIVATE_CHAT_TYPE, GROUP_CHAT_TYPE, SUPERGROUP_CHAT_TYPE)
-
-	b.Bot.AddHandler(COMMAND_HELP, func(u *objs.Update) {
-		b.Help(ctx, u)
-		if err != nil {
-			log.Printf("[Start]: %v\n", err)
-		}
-	}, PRIVATE_CHAT_TYPE, GROUP_CHAT_TYPE, SUPERGROUP_CHAT_TYPE)
-
-	b.Bot.AddHandler(COMMAND_CHOOSE_TAGS, func(u *objs.Update) {
-		b.ChooseTags(ctx, u)
-		if err != nil {
-			log.Printf("[Start]: %v\n", err)
-		}
-	}, PRIVATE_CHAT_TYPE, GROUP_CHAT_TYPE, SUPERGROUP_CHAT_TYPE)
-
-	b.Bot.AddHandler(COMMAND_GET_SUBSCRIBED_CATEGORIES, func(u *objs.Update) {
-		b.GetSubscribedTags(ctx, u)
-		if err != nil {
-			log.Printf("[Start]: %v\n", err)
-		}
-	}, PRIVATE_CHAT_TYPE, GROUP_CHAT_TYPE, SUPERGROUP_CHAT_TYPE)
-
-	b.Bot.AddHandler(COMMAND_SCHEDULE_PILL, func(u *objs.Update) {
-		b.SchedulePill(ctx, u)
-		if err != nil {
-			log.Printf("[Start]: %v\n", err)
-		}
-	}, PRIVATE_CHAT_TYPE, GROUP_CHAT_TYPE, SUPERGROUP_CHAT_TYPE)
-
-	return err
+	var handlers = map[string]func(ctx context.Context, up *objects.Update){
+		COMMAND_START:                     b.Run,
+		COMMAND_PILL:                      b.Pill,
+		COMMAND_HELP:                      b.Help,
+		COMMAND_CHOOSE_TAGS:               b.ChooseTags,
+		COMMAND_GET_SUBSCRIBED_CATEGORIES: b.GetSubscribedTags,
+		COMMAND_SCHEDULE_PILL:             b.SchedulePill,
+	}
+	for c, f := range handlers {
+		b.Bot.AddHandler(c, func(u *objs.Update) {
+			f(ctx, u)
+		}, PRIVATE_CHAT_TYPE, GROUP_CHAT_TYPE, SUPERGROUP_CHAT_TYPE)
+	}
 }

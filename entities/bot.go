@@ -23,5 +23,5 @@ type BotConf struct {
 }
 
 type IBot interface {
-	Start(ctx context.Context) error
+	Start(ctx context.Context)
 }
