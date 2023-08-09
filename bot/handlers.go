@@ -38,7 +38,7 @@ func (b *Bot) Run(ctx context.Context, up *objects.Update) {
 }
 
 func (b *Bot) Pill(ctx context.Context, up *objects.Update) {
-	var msg string
+	msg := ""
 	subscribedTags, err := b.UserRepo.GetTagsByUserId(ctx, strconv.Itoa(up.Message.Chat.Id))
 	if err != nil {
 		log.Printf("[Pill]: failed getting tags: %v", err.Error())
@@ -76,11 +76,17 @@ func (b *Bot) GetTags(ctx context.Context, up *objects.Update) {
 }
 
 func (b *Bot) GetSubscribedTags(ctx context.Context, up *objects.Update) {
+	msg := ""
 	tags, err := b.UserRepo.GetTagsByUserId(ctx, strconv.Itoa(up.Message.Chat.Id))
 	if err != nil {
 		log.Printf("[getSubscribedTags]: failed getting tags by user id: %v", err.Error())
 	}
-	b.sendMessage(utils.AggregateTags(tags), up)
+	msg += utils.AggregateTags(tags)
+	if len(tags) == 0 {
+		msg += "You are not subscribed to any tag!\nSubscribe one with /choose_tags [tag] command!"
+	}
+
+	b.sendMessage(msg, up)
 }
 
 func (b *Bot) ChooseTags(ctx context.Context, up *objects.Update) {

@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/pills-of-cs/adapters/ent"
@@ -37,8 +38,9 @@ var (
 	COMMAND_PILL                      = "/pill"
 	COMMAND_HELP                      = "/help"
 	COMMAND_CHOOSE_TAGS               = "/choose_tags"
-	COMMAND_GET_SUBSCRIBED_CATEGORIES = "get_subscribed_categories"
+	COMMAND_GET_SUBSCRIBED_CATEGORIES = "/get_subscribed_categories"
 	COMMAND_SCHEDULE_PILL             = "/schedule_pill"
+	COMMAND_GET_TAGS                  = "/get_tags"
 )
 
 var PRIVATE_CHAT_TYPE = "private"
@@ -164,6 +166,7 @@ func (b *Bot) Start(ctx context.Context) {
 	}()
 
 	var handlers = map[string]func(ctx context.Context, up *objects.Update){
+		COMMAND_GET_TAGS:                  b.GetTags,
 		COMMAND_START:                     b.Run,
 		COMMAND_PILL:                      b.Pill,
 		COMMAND_HELP:                      b.Help,
@@ -172,8 +175,12 @@ func (b *Bot) Start(ctx context.Context) {
 		COMMAND_SCHEDULE_PILL:             b.SchedulePill,
 	}
 	for c, f := range handlers {
+		c := c
+		f := f
 		b.Bot.AddHandler(c, func(u *objs.Update) {
-			f(ctx, u)
+			if strings.Contains(u.Message.Text, c) {
+				f(ctx, u)
+			}
 		}, PRIVATE_CHAT_TYPE, GROUP_CHAT_TYPE, SUPERGROUP_CHAT_TYPE)
 	}
 }
