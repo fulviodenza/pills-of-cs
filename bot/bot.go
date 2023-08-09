@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/pills-of-cs/adapters/ent"
@@ -16,6 +17,7 @@ import (
 
 	bt "github.com/SakoDroid/telego"
 	cfg "github.com/SakoDroid/telego/configs"
+	"github.com/SakoDroid/telego/objects"
 	objs "github.com/SakoDroid/telego/objects"
 	"github.com/jomei/notionapi"
 	"github.com/robfig/cron/v3"
@@ -36,8 +38,9 @@ var (
 	COMMAND_PILL                      = "/pill"
 	COMMAND_HELP                      = "/help"
 	COMMAND_CHOOSE_TAGS               = "/choose_tags"
-	COMMAND_GET_SUBSCRIBED_CATEGORIES = "get_subscribed_categories"
+	COMMAND_GET_SUBSCRIBED_CATEGORIES = "/get_subscribed_categories"
 	COMMAND_SCHEDULE_PILL             = "/schedule_pill"
+	COMMAND_GET_TAGS                  = "/get_tags"
 )
 
 var PRIVATE_CHAT_TYPE = "private"
@@ -85,7 +88,7 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 	client, err := ent.SetupAndConnectDatabase(databaseUrl)
 	fmt.Println(client)
 	if err != nil {
-		log.Fatalf("[ent.SetupAndConnectDatabase]: error in db setup or connection: %v", err.Error())
+		log.Printf("[ent.SetupAndConnectDatabase]: error in db setup or connection: %v", err.Error())
 	}
 
 	bot_config := &cfg.BotConfigs{
@@ -153,8 +156,7 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 	return bot, client, err
 }
 
-func (b *Bot) Start(ctx context.Context) error {
-
+func (b *Bot) Start(ctx context.Context) {
 	updateCh := b.Bot.GetUpdateChannel()
 	go func() {
 		for {
@@ -162,45 +164,23 @@ func (b *Bot) Start(ctx context.Context) error {
 			log.Printf("got update: %v\n", update.Update_id)
 		}
 	}()
-	var err error
-	b.Bot.AddHandler(COMMAND_START, func(u *objs.Update) {
-		b.Run(ctx, u)
-		if err != nil {
-			log.Printf("[Start]: %v\n", err)
-		}
-	}, PRIVATE_CHAT_TYPE, GROUP_CHAT_TYPE, SUPERGROUP_CHAT_TYPE)
 
-	b.Bot.AddHandler(COMMAND_PILL, func(u *objs.Update) {
-		b.Pill(ctx, u)
-	}, PRIVATE_CHAT_TYPE, GROUP_CHAT_TYPE, SUPERGROUP_CHAT_TYPE)
-
-	b.Bot.AddHandler(COMMAND_HELP, func(u *objs.Update) {
-		b.Help(ctx, u)
-		if err != nil {
-			log.Printf("[Start]: %v\n", err)
-		}
-	}, PRIVATE_CHAT_TYPE, GROUP_CHAT_TYPE, SUPERGROUP_CHAT_TYPE)
-
-	b.Bot.AddHandler(COMMAND_CHOOSE_TAGS, func(u *objs.Update) {
-		b.ChooseTags(ctx, u)
-		if err != nil {
-			log.Printf("[Start]: %v\n", err)
-		}
-	}, PRIVATE_CHAT_TYPE, GROUP_CHAT_TYPE, SUPERGROUP_CHAT_TYPE)
-
-	b.Bot.AddHandler(COMMAND_GET_SUBSCRIBED_CATEGORIES, func(u *objs.Update) {
-		b.GetSubscribedTags(ctx, u)
-		if err != nil {
-			log.Printf("[Start]: %v\n", err)
-		}
-	}, PRIVATE_CHAT_TYPE, GROUP_CHAT_TYPE, SUPERGROUP_CHAT_TYPE)
-
-	b.Bot.AddHandler(COMMAND_SCHEDULE_PILL, func(u *objs.Update) {
-		b.SchedulePill(ctx, u)
-		if err != nil {
-			log.Printf("[Start]: %v\n", err)
-		}
-	}, PRIVATE_CHAT_TYPE, GROUP_CHAT_TYPE, SUPERGROUP_CHAT_TYPE)
-
-	return err
+	var handlers = map[string]func(ctx context.Context, up *objects.Update){
+		COMMAND_GET_TAGS:                  b.GetTags,
+		COMMAND_START:                     b.Run,
+		COMMAND_PILL:                      b.Pill,
+		COMMAND_HELP:                      b.Help,
+		COMMAND_CHOOSE_TAGS:               b.ChooseTags,
+		COMMAND_GET_SUBSCRIBED_CATEGORIES: b.GetSubscribedTags,
+		COMMAND_SCHEDULE_PILL:             b.SchedulePill,
+	}
+	for c, f := range handlers {
+		c := c
+		f := f
+		b.Bot.AddHandler(c, func(u *objs.Update) {
+			if strings.Contains(u.Message.Text, c) {
+				f(ctx, u)
+			}
+		}, PRIVATE_CHAT_TYPE, GROUP_CHAT_TYPE, SUPERGROUP_CHAT_TYPE)
+	}
 }
