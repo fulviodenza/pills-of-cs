@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/SakoDroid/telego/objects"
+	"github.com/barthr/newsapi"
 	"github.com/pills-of-cs/entities"
 	"github.com/pills-of-cs/parser"
 	"github.com/pills-of-cs/utils"
@@ -24,17 +25,27 @@ type IBot interface {
 	ChooseTags(ctx context.Context, up *objects.Update)
 	GetTags(ctx context.Context, up *objects.Update)
 	SchedulePill(ctx context.Context, up *objects.Update)
+	News(ctx context.Context, up *objects.Update)
+	ScheduleNews(ctx context.Context, up *objects.Update)
 }
 
-func (b *Bot) sendMessage(msg string, up *objects.Update) {
-	_, err := b.Bot.SendMessage(up.Message.Chat.Id, msg, "", 0, false, false)
+func (b *Bot) sendMessage(msg string, up *objects.Update, formatMarkdown bool) {
+	parseMode := ""
+	if formatMarkdown {
+		parseMode = "Markdown"
+	}
+	_, err := b.Bot.SendMessage(up.Message.Chat.Id, msg, parseMode, 0, false, false)
 	if err != nil {
 		log.Printf("[SendMessage]: sending message to user: %v", err.Error())
 	}
 }
 
 func (b *Bot) Run(ctx context.Context, up *objects.Update) {
-	b.sendMessage("Welcome to the pills-of-cs bot! Press `/pill` to request a pill or `/help` to get informations about the bot", up)
+	b.sendMessage("Welcome to the pills-of-cs bot! Press `/pill` to request a pill or `/help` to get informations about the bot", up, false)
+}
+
+func (b *Bot) Help(ctx context.Context, up *objects.Update) {
+	b.sendMessage(string(b.HelpMessage), up, false)
 }
 
 func (b *Bot) Pill(ctx context.Context, up *objects.Update) {
@@ -57,11 +68,36 @@ func (b *Bot) Pill(ctx context.Context, up *objects.Update) {
 		randomIndex = utils.MakeTimestamp(len(randomCategoryP))
 		msg = randomCategoryP[randomIndex].Title + ": " + randomCategoryP[randomIndex].Body
 	}
-	b.sendMessage(msg, up)
+	b.sendMessage(msg, up, false)
 }
 
-func (b *Bot) Help(ctx context.Context, up *objects.Update) {
-	b.sendMessage(string(b.HelpMessage), up)
+func (b *Bot) News(ctx context.Context, up *objects.Update) {
+	msg := ""
+	newsCategories := ""
+
+	categories, err := b.UserRepo.GetTagsByUserId(ctx, strconv.Itoa(up.Message.Chat.Id))
+	if err != nil || len(categories) == 0 {
+		newsCategories += "technology"
+	}
+
+	sourceParams := &newsapi.EverythingParameters{}
+	for _, c := range categories {
+		newsCategories += c + "&"
+	}
+	sourceParams.Keywords = newsCategories
+	sourceParams.Language = "en"
+
+	sources, err := b.NewsClient.GetEverything(ctx, sourceParams)
+	if err == nil && len(sources.Articles) != 0 {
+		for i := 0; i < 10; i++ {
+			msg += "- *" + sources.Articles[i].Title + "*\n"
+			msg += sources.Articles[i].Description + "\n"
+			msg += "from " + sources.Articles[i].URL + "\n"
+		}
+	} else {
+		msg += "sources missing!"
+	}
+	b.sendMessage(msg, up, true)
 }
 
 func (b *Bot) GetTags(ctx context.Context, up *objects.Update) {
@@ -72,7 +108,7 @@ func (b *Bot) GetTags(ctx context.Context, up *objects.Update) {
 	if len(b.Categories) == 0 {
 		msg = "empty categories"
 	}
-	b.sendMessage(msg, up)
+	b.sendMessage(msg, up, false)
 }
 
 func (b *Bot) GetSubscribedTags(ctx context.Context, up *objects.Update) {
@@ -86,7 +122,7 @@ func (b *Bot) GetSubscribedTags(ctx context.Context, up *objects.Update) {
 		msg += "You are not subscribed to any tag!\nSubscribe one with /choose_tags [tag] command!"
 	}
 
-	b.sendMessage(msg, up)
+	b.sendMessage(msg, up, false)
 }
 
 func (b *Bot) ChooseTags(ctx context.Context, up *objects.Update) {
@@ -110,10 +146,26 @@ func (b *Bot) ChooseTags(ctx context.Context, up *objects.Update) {
 	}
 
 	log.Printf("[ChooseTags]: return operation exit")
-	b.sendMessage("tags updated", up)
+	b.sendMessage("tags updated", up, false)
 }
 
 func (b *Bot) SchedulePill(ctx context.Context, up *objects.Update) {
+	msg, err := b.setCron(ctx, up, "pill")
+	if err != nil {
+		log.Printf("[SchedulePill] got error: %v", err)
+	}
+	b.sendMessage(msg, up, false)
+}
+
+func (b *Bot) ScheduleNews(ctx context.Context, up *objects.Update) {
+	msg, err := b.setCron(ctx, up, "news")
+	if err != nil {
+		log.Printf("[ScheduleNews] got error: %v", err)
+	}
+	b.sendMessage(msg, up, true)
+}
+
+func (b *Bot) setCron(ctx context.Context, up *objects.Update, schedulerType string) (string, error) {
 	var msg string
 	id := strconv.Itoa(up.Message.Chat.Id)
 	// args[1] contains the time HH:MM, args[2] contains the timezone
@@ -127,10 +179,20 @@ func (b *Bot) SchedulePill(ctx context.Context, up *objects.Update) {
 		msg = "Failed parsing provided time"
 	}
 
-	err = b.UserRepo.SaveSchedule(ctx, id, crontab)
-	if err != nil {
-		log.Printf("[SchedulePill]: failed saving time: %v", err.Error())
-		msg = "failed saving time"
+	switch schedulerType {
+	case "pill":
+		err = b.UserRepo.SavePillSchedule(ctx, id, crontab)
+		if err != nil {
+			log.Printf("[SchedulePill]: failed saving time: %v", err.Error())
+			msg = "failed saving time"
+		}
+	case "news":
+		err = b.UserRepo.SaveNewsSchedule(ctx, id, crontab)
+		if err != nil {
+			log.Printf("[SchedulePill]: failed saving time: %v", err.Error())
+			msg = "failed saving time"
+		}
+
 	}
 
 	// run the goroutine with the cron
@@ -140,16 +202,27 @@ func (b *Bot) SchedulePill(ctx context.Context, up *objects.Update) {
 				log.Println("[SchedulePill]: Recovering from panic:", r)
 			}
 		}()
-		_, err = b.Scheduler.AddFunc(crontab, func() {
-			b.Pill(ctx, u)
-		})
-		if err != nil {
-			log.Println("[SchedulePill]: got error:", err)
-			return
+		switch schedulerType {
+		case "pill":
+			_, err = b.PillScheduler.AddFunc(crontab, func() {
+				b.Pill(ctx, u)
+			})
+			if err != nil {
+				log.Println("[SchedulePill]: got error:", err)
+				return
+			}
+		case "news":
+			_, err = b.NewsScheduler.AddFunc(crontab, func() {
+				b.News(ctx, u)
+			})
+			if err != nil {
+				log.Println("[ScheduleNews]: got error:", err)
+				return
+			}
 		}
 	}(ctx, up)
 
 	// the human readable format is with times[0] (hours] first
-	msg = fmt.Sprintf("Crontab for you pill `%s`", crontab)
-	b.sendMessage(msg, up)
+	msg = fmt.Sprintf("Crontab for your pill `%s`", crontab)
+	return msg, nil
 }

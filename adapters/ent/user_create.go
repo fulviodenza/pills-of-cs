@@ -25,9 +25,15 @@ func (uc *UserCreate) SetCategories(s []string) *UserCreate {
 	return uc
 }
 
-// SetSchedule sets the "schedule" field.
-func (uc *UserCreate) SetSchedule(s string) *UserCreate {
-	uc.mutation.SetSchedule(s)
+// SetPillSchedule sets the "pill_schedule" field.
+func (uc *UserCreate) SetPillSchedule(s string) *UserCreate {
+	uc.mutation.SetPillSchedule(s)
+	return uc
+}
+
+// SetNewsSchedule sets the "news_schedule" field.
+func (uc *UserCreate) SetNewsSchedule(s string) *UserCreate {
+	uc.mutation.SetNewsSchedule(s)
 	return uc
 }
 
@@ -71,8 +77,11 @@ func (uc *UserCreate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (uc *UserCreate) check() error {
-	if _, ok := uc.mutation.Schedule(); !ok {
-		return &ValidationError{Name: "schedule", err: errors.New(`ent: missing required field "User.schedule"`)}
+	if _, ok := uc.mutation.PillSchedule(); !ok {
+		return &ValidationError{Name: "pill_schedule", err: errors.New(`ent: missing required field "User.pill_schedule"`)}
+	}
+	if _, ok := uc.mutation.NewsSchedule(); !ok {
+		return &ValidationError{Name: "news_schedule", err: errors.New(`ent: missing required field "User.news_schedule"`)}
 	}
 	return nil
 }
@@ -113,9 +122,13 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		_spec.SetField(user.FieldCategories, field.TypeJSON, value)
 		_node.Categories = value
 	}
-	if value, ok := uc.mutation.Schedule(); ok {
-		_spec.SetField(user.FieldSchedule, field.TypeString, value)
-		_node.Schedule = value
+	if value, ok := uc.mutation.PillSchedule(); ok {
+		_spec.SetField(user.FieldPillSchedule, field.TypeString, value)
+		_node.PillSchedule = value
+	}
+	if value, ok := uc.mutation.NewsSchedule(); ok {
+		_spec.SetField(user.FieldNewsSchedule, field.TypeString, value)
+		_node.NewsSchedule = value
 	}
 	return _node, _spec
 }

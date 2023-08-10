@@ -8,6 +8,11 @@ require (
 )
 
 require (
+	github.com/barthr/newsapi v1.3.0 // indirect
+	github.com/google/go-querystring v0.0.0-20170111101155-53e6ce116135 // indirect
+)
+
+require (
 	ariga.io/atlas v0.9.1-0.20230119145809-92243f7c55cb // indirect
 	entgo.io/ent v0.11.8
 	github.com/agext/levenshtein v1.2.1 // indirect
