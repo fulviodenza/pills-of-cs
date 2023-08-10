@@ -21,7 +21,8 @@ func (ur *UserRepo) AddTagsToUser(ctx context.Context, id string, topics []strin
 		err = ur.User.Create().
 			SetID(id).
 			SetCategories(topics).
-			SetSchedule("").
+			SetPillSchedule("").
+			SetNewsSchedule("").
 			Exec(ctx)
 		if err != nil {
 			log.Printf("[ur.User.Create]: error executing the query: %v", err)
@@ -50,7 +51,7 @@ func (ur *UserRepo) AddTagsToUser(ctx context.Context, id string, topics []strin
 	return nil
 }
 
-func (ur *UserRepo) SaveSchedule(ctx context.Context, id string, schedule string) error {
+func (ur *UserRepo) SavePillSchedule(ctx context.Context, id string, pill_schedule string) error {
 	_, err := ur.User.Query().
 		Where(user.IDEQ(id)).
 		First(ctx)
@@ -58,7 +59,8 @@ func (ur *UserRepo) SaveSchedule(ctx context.Context, id string, schedule string
 		err = ur.User.Create().
 			SetID(id).
 			SetCategories([]string{}).
-			SetSchedule(schedule).
+			SetPillSchedule(pill_schedule).
+			SetNewsSchedule("").
 			Exec(ctx)
 		if err != nil {
 			log.Printf("[ur.User.Create]: error executing the query: %v", err)
@@ -72,7 +74,7 @@ func (ur *UserRepo) SaveSchedule(ctx context.Context, id string, schedule string
 		}
 	}
 
-	err = ur.User.Update().SetSchedule(schedule).Where(user.IDEQ(id)).Exec(ctx)
+	err = ur.User.Update().SetPillSchedule(pill_schedule).Where(user.IDEQ(id)).Exec(ctx)
 	if err != nil {
 		log.Printf("[ur.User.Update]: error executing the query: %v", err)
 		return err
@@ -101,7 +103,7 @@ func (ur *UserRepo) GetTagsByUserId(ctx context.Context, id string) ([]string, e
 	return user.Categories, err
 }
 
-func (ur UserRepo) GetAllCrontabs(ctx context.Context) (map[string]string, error) {
+func (ur UserRepo) GetAllPillCrontabs(ctx context.Context) (map[string]string, error) {
 	users, err := ur.Client.User.Query().All(ctx)
 	if err != nil {
 		return nil, err
@@ -109,9 +111,54 @@ func (ur UserRepo) GetAllCrontabs(ctx context.Context) (map[string]string, error
 
 	crontabs := make(map[string]string, len(users))
 	for _, u := range users {
-		crontabs[u.ID] = u.Schedule
+		crontabs[u.ID] = u.PillSchedule
 	}
 	return crontabs, nil
+}
+
+func (ur UserRepo) GetAllNewsCrontabs(ctx context.Context) (map[string]string, error) {
+	users, err := ur.Client.User.Query().All(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	crontabs := make(map[string]string, len(users))
+	for _, u := range users {
+		crontabs[u.ID] = u.NewsSchedule
+	}
+	return crontabs, nil
+}
+
+func (ur *UserRepo) SaveNewsSchedule(ctx context.Context, id string, news_schedule string) error {
+	_, err := ur.User.Query().
+		Where(user.IDEQ(id)).
+		First(ctx)
+	if _, ok := err.(*ent.NotFoundError); ok {
+		err = ur.User.Create().
+			SetID(id).
+			SetCategories([]string{}).
+			SetPillSchedule("").
+			SetNewsSchedule(news_schedule).
+			Exec(ctx)
+		if err != nil {
+			log.Printf("[ur.User.Create]: error executing the query: %v", err)
+			return err
+		}
+	}
+	if err != nil {
+		if _, ok := err.(*ent.NotFoundError); !ok {
+			log.Printf("[ur.User.Create]: error executing the query: %v", err)
+			return err
+		}
+	}
+
+	err = ur.User.Update().SetNewsSchedule(news_schedule).Where(user.IDEQ(id)).Exec(ctx)
+	if err != nil {
+		log.Printf("[ur.User.Update]: error executing the query: %v", err)
+		return err
+	}
+
+	return nil
 }
 
 func findCategoriesToAdd(s1, s2 []string) []string {

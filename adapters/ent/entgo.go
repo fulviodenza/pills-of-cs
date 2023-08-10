@@ -17,7 +17,7 @@ func SetupAndConnectDatabase(baseConnectionString string) (*Client, error) {
 	}
 
 	// Create the "pills" table
-	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS users (user_id TEXT PRIMARY KEY, categories json, schedule TEXT)`)
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS users (user_id TEXT PRIMARY KEY, categories json, pill_schedule TEXT, news_schedule TEXT)`)
 	if err != nil {
 		log.Fatalf("[SetupAndConnectDatabase]: error executing the init query: %v", err)
 	}

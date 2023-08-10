@@ -46,9 +46,15 @@ func (uu *UserUpdate) ClearCategories() *UserUpdate {
 	return uu
 }
 
-// SetSchedule sets the "schedule" field.
-func (uu *UserUpdate) SetSchedule(s string) *UserUpdate {
-	uu.mutation.SetSchedule(s)
+// SetPillSchedule sets the "pill_schedule" field.
+func (uu *UserUpdate) SetPillSchedule(s string) *UserUpdate {
+	uu.mutation.SetPillSchedule(s)
+	return uu
+}
+
+// SetNewsSchedule sets the "news_schedule" field.
+func (uu *UserUpdate) SetNewsSchedule(s string) *UserUpdate {
+	uu.mutation.SetNewsSchedule(s)
 	return uu
 }
 
@@ -104,8 +110,11 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if uu.mutation.CategoriesCleared() {
 		_spec.ClearField(user.FieldCategories, field.TypeJSON)
 	}
-	if value, ok := uu.mutation.Schedule(); ok {
-		_spec.SetField(user.FieldSchedule, field.TypeString, value)
+	if value, ok := uu.mutation.PillSchedule(); ok {
+		_spec.SetField(user.FieldPillSchedule, field.TypeString, value)
+	}
+	if value, ok := uu.mutation.NewsSchedule(); ok {
+		_spec.SetField(user.FieldNewsSchedule, field.TypeString, value)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, uu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -145,9 +154,15 @@ func (uuo *UserUpdateOne) ClearCategories() *UserUpdateOne {
 	return uuo
 }
 
-// SetSchedule sets the "schedule" field.
-func (uuo *UserUpdateOne) SetSchedule(s string) *UserUpdateOne {
-	uuo.mutation.SetSchedule(s)
+// SetPillSchedule sets the "pill_schedule" field.
+func (uuo *UserUpdateOne) SetPillSchedule(s string) *UserUpdateOne {
+	uuo.mutation.SetPillSchedule(s)
+	return uuo
+}
+
+// SetNewsSchedule sets the "news_schedule" field.
+func (uuo *UserUpdateOne) SetNewsSchedule(s string) *UserUpdateOne {
+	uuo.mutation.SetNewsSchedule(s)
 	return uuo
 }
 
@@ -233,8 +248,11 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	if uuo.mutation.CategoriesCleared() {
 		_spec.ClearField(user.FieldCategories, field.TypeJSON)
 	}
-	if value, ok := uuo.mutation.Schedule(); ok {
-		_spec.SetField(user.FieldSchedule, field.TypeString, value)
+	if value, ok := uuo.mutation.PillSchedule(); ok {
+		_spec.SetField(user.FieldPillSchedule, field.TypeString, value)
+	}
+	if value, ok := uuo.mutation.NewsSchedule(); ok {
+		_spec.SetField(user.FieldNewsSchedule, field.TypeString, value)
 	}
 	_node = &User{config: uuo.config}
 	_spec.Assign = _node.assignValues

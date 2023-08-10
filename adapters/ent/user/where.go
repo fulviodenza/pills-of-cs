@@ -52,9 +52,14 @@ func IDLTE(id string) predicate.User {
 	return predicate.User(sql.FieldLTE(FieldID, id))
 }
 
-// Schedule applies equality check predicate on the "schedule" field. It's identical to ScheduleEQ.
-func Schedule(v string) predicate.User {
-	return predicate.User(sql.FieldEQ(FieldSchedule, v))
+// PillSchedule applies equality check predicate on the "pill_schedule" field. It's identical to PillScheduleEQ.
+func PillSchedule(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldPillSchedule, v))
+}
+
+// NewsSchedule applies equality check predicate on the "news_schedule" field. It's identical to NewsScheduleEQ.
+func NewsSchedule(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldNewsSchedule, v))
 }
 
 // CategoriesIsNil applies the IsNil predicate on the "categories" field.
@@ -67,69 +72,134 @@ func CategoriesNotNil() predicate.User {
 	return predicate.User(sql.FieldNotNull(FieldCategories))
 }
 
-// ScheduleEQ applies the EQ predicate on the "schedule" field.
-func ScheduleEQ(v string) predicate.User {
-	return predicate.User(sql.FieldEQ(FieldSchedule, v))
+// PillScheduleEQ applies the EQ predicate on the "pill_schedule" field.
+func PillScheduleEQ(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldPillSchedule, v))
 }
 
-// ScheduleNEQ applies the NEQ predicate on the "schedule" field.
-func ScheduleNEQ(v string) predicate.User {
-	return predicate.User(sql.FieldNEQ(FieldSchedule, v))
+// PillScheduleNEQ applies the NEQ predicate on the "pill_schedule" field.
+func PillScheduleNEQ(v string) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldPillSchedule, v))
 }
 
-// ScheduleIn applies the In predicate on the "schedule" field.
-func ScheduleIn(vs ...string) predicate.User {
-	return predicate.User(sql.FieldIn(FieldSchedule, vs...))
+// PillScheduleIn applies the In predicate on the "pill_schedule" field.
+func PillScheduleIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldIn(FieldPillSchedule, vs...))
 }
 
-// ScheduleNotIn applies the NotIn predicate on the "schedule" field.
-func ScheduleNotIn(vs ...string) predicate.User {
-	return predicate.User(sql.FieldNotIn(FieldSchedule, vs...))
+// PillScheduleNotIn applies the NotIn predicate on the "pill_schedule" field.
+func PillScheduleNotIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldPillSchedule, vs...))
 }
 
-// ScheduleGT applies the GT predicate on the "schedule" field.
-func ScheduleGT(v string) predicate.User {
-	return predicate.User(sql.FieldGT(FieldSchedule, v))
+// PillScheduleGT applies the GT predicate on the "pill_schedule" field.
+func PillScheduleGT(v string) predicate.User {
+	return predicate.User(sql.FieldGT(FieldPillSchedule, v))
 }
 
-// ScheduleGTE applies the GTE predicate on the "schedule" field.
-func ScheduleGTE(v string) predicate.User {
-	return predicate.User(sql.FieldGTE(FieldSchedule, v))
+// PillScheduleGTE applies the GTE predicate on the "pill_schedule" field.
+func PillScheduleGTE(v string) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldPillSchedule, v))
 }
 
-// ScheduleLT applies the LT predicate on the "schedule" field.
-func ScheduleLT(v string) predicate.User {
-	return predicate.User(sql.FieldLT(FieldSchedule, v))
+// PillScheduleLT applies the LT predicate on the "pill_schedule" field.
+func PillScheduleLT(v string) predicate.User {
+	return predicate.User(sql.FieldLT(FieldPillSchedule, v))
 }
 
-// ScheduleLTE applies the LTE predicate on the "schedule" field.
-func ScheduleLTE(v string) predicate.User {
-	return predicate.User(sql.FieldLTE(FieldSchedule, v))
+// PillScheduleLTE applies the LTE predicate on the "pill_schedule" field.
+func PillScheduleLTE(v string) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldPillSchedule, v))
 }
 
-// ScheduleContains applies the Contains predicate on the "schedule" field.
-func ScheduleContains(v string) predicate.User {
-	return predicate.User(sql.FieldContains(FieldSchedule, v))
+// PillScheduleContains applies the Contains predicate on the "pill_schedule" field.
+func PillScheduleContains(v string) predicate.User {
+	return predicate.User(sql.FieldContains(FieldPillSchedule, v))
 }
 
-// ScheduleHasPrefix applies the HasPrefix predicate on the "schedule" field.
-func ScheduleHasPrefix(v string) predicate.User {
-	return predicate.User(sql.FieldHasPrefix(FieldSchedule, v))
+// PillScheduleHasPrefix applies the HasPrefix predicate on the "pill_schedule" field.
+func PillScheduleHasPrefix(v string) predicate.User {
+	return predicate.User(sql.FieldHasPrefix(FieldPillSchedule, v))
 }
 
-// ScheduleHasSuffix applies the HasSuffix predicate on the "schedule" field.
-func ScheduleHasSuffix(v string) predicate.User {
-	return predicate.User(sql.FieldHasSuffix(FieldSchedule, v))
+// PillScheduleHasSuffix applies the HasSuffix predicate on the "pill_schedule" field.
+func PillScheduleHasSuffix(v string) predicate.User {
+	return predicate.User(sql.FieldHasSuffix(FieldPillSchedule, v))
 }
 
-// ScheduleEqualFold applies the EqualFold predicate on the "schedule" field.
-func ScheduleEqualFold(v string) predicate.User {
-	return predicate.User(sql.FieldEqualFold(FieldSchedule, v))
+// PillScheduleEqualFold applies the EqualFold predicate on the "pill_schedule" field.
+func PillScheduleEqualFold(v string) predicate.User {
+	return predicate.User(sql.FieldEqualFold(FieldPillSchedule, v))
 }
 
-// ScheduleContainsFold applies the ContainsFold predicate on the "schedule" field.
-func ScheduleContainsFold(v string) predicate.User {
-	return predicate.User(sql.FieldContainsFold(FieldSchedule, v))
+// PillScheduleContainsFold applies the ContainsFold predicate on the "pill_schedule" field.
+func PillScheduleContainsFold(v string) predicate.User {
+	return predicate.User(sql.FieldContainsFold(FieldPillSchedule, v))
+}
+
+// NewsScheduleEQ applies the EQ predicate on the "news_schedule" field.
+func NewsScheduleEQ(v string) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldNewsSchedule, v))
+}
+
+// NewsScheduleNEQ applies the NEQ predicate on the "news_schedule" field.
+func NewsScheduleNEQ(v string) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldNewsSchedule, v))
+}
+
+// NewsScheduleIn applies the In predicate on the "news_schedule" field.
+func NewsScheduleIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldIn(FieldNewsSchedule, vs...))
+}
+
+// NewsScheduleNotIn applies the NotIn predicate on the "news_schedule" field.
+func NewsScheduleNotIn(vs ...string) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldNewsSchedule, vs...))
+}
+
+// NewsScheduleGT applies the GT predicate on the "news_schedule" field.
+func NewsScheduleGT(v string) predicate.User {
+	return predicate.User(sql.FieldGT(FieldNewsSchedule, v))
+}
+
+// NewsScheduleGTE applies the GTE predicate on the "news_schedule" field.
+func NewsScheduleGTE(v string) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldNewsSchedule, v))
+}
+
+// NewsScheduleLT applies the LT predicate on the "news_schedule" field.
+func NewsScheduleLT(v string) predicate.User {
+	return predicate.User(sql.FieldLT(FieldNewsSchedule, v))
+}
+
+// NewsScheduleLTE applies the LTE predicate on the "news_schedule" field.
+func NewsScheduleLTE(v string) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldNewsSchedule, v))
+}
+
+// NewsScheduleContains applies the Contains predicate on the "news_schedule" field.
+func NewsScheduleContains(v string) predicate.User {
+	return predicate.User(sql.FieldContains(FieldNewsSchedule, v))
+}
+
+// NewsScheduleHasPrefix applies the HasPrefix predicate on the "news_schedule" field.
+func NewsScheduleHasPrefix(v string) predicate.User {
+	return predicate.User(sql.FieldHasPrefix(FieldNewsSchedule, v))
+}
+
+// NewsScheduleHasSuffix applies the HasSuffix predicate on the "news_schedule" field.
+func NewsScheduleHasSuffix(v string) predicate.User {
+	return predicate.User(sql.FieldHasSuffix(FieldNewsSchedule, v))
+}
+
+// NewsScheduleEqualFold applies the EqualFold predicate on the "news_schedule" field.
+func NewsScheduleEqualFold(v string) predicate.User {
+	return predicate.User(sql.FieldEqualFold(FieldNewsSchedule, v))
+}
+
+// NewsScheduleContainsFold applies the ContainsFold predicate on the "news_schedule" field.
+func NewsScheduleContainsFold(v string) predicate.User {
+	return predicate.User(sql.FieldContainsFold(FieldNewsSchedule, v))
 }
 
 // And groups predicates with the AND operator between them.

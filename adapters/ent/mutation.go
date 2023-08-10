@@ -35,7 +35,8 @@ type UserMutation struct {
 	id               *string
 	categories       *[]string
 	appendcategories []string
-	schedule         *string
+	pill_schedule    *string
+	news_schedule    *string
 	clearedFields    map[string]struct{}
 	done             bool
 	oldValue         func(context.Context) (*User, error)
@@ -211,40 +212,76 @@ func (m *UserMutation) ResetCategories() {
 	delete(m.clearedFields, user.FieldCategories)
 }
 
-// SetSchedule sets the "schedule" field.
-func (m *UserMutation) SetSchedule(s string) {
-	m.schedule = &s
+// SetPillSchedule sets the "pill_schedule" field.
+func (m *UserMutation) SetPillSchedule(s string) {
+	m.pill_schedule = &s
 }
 
-// Schedule returns the value of the "schedule" field in the mutation.
-func (m *UserMutation) Schedule() (r string, exists bool) {
-	v := m.schedule
+// PillSchedule returns the value of the "pill_schedule" field in the mutation.
+func (m *UserMutation) PillSchedule() (r string, exists bool) {
+	v := m.pill_schedule
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldSchedule returns the old "schedule" field's value of the User entity.
+// OldPillSchedule returns the old "pill_schedule" field's value of the User entity.
 // If the User object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserMutation) OldSchedule(ctx context.Context) (v string, err error) {
+func (m *UserMutation) OldPillSchedule(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldSchedule is only allowed on UpdateOne operations")
+		return v, errors.New("OldPillSchedule is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldSchedule requires an ID field in the mutation")
+		return v, errors.New("OldPillSchedule requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldSchedule: %w", err)
+		return v, fmt.Errorf("querying old value for OldPillSchedule: %w", err)
 	}
-	return oldValue.Schedule, nil
+	return oldValue.PillSchedule, nil
 }
 
-// ResetSchedule resets all changes to the "schedule" field.
-func (m *UserMutation) ResetSchedule() {
-	m.schedule = nil
+// ResetPillSchedule resets all changes to the "pill_schedule" field.
+func (m *UserMutation) ResetPillSchedule() {
+	m.pill_schedule = nil
+}
+
+// SetNewsSchedule sets the "news_schedule" field.
+func (m *UserMutation) SetNewsSchedule(s string) {
+	m.news_schedule = &s
+}
+
+// NewsSchedule returns the value of the "news_schedule" field in the mutation.
+func (m *UserMutation) NewsSchedule() (r string, exists bool) {
+	v := m.news_schedule
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNewsSchedule returns the old "news_schedule" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldNewsSchedule(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNewsSchedule is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNewsSchedule requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNewsSchedule: %w", err)
+	}
+	return oldValue.NewsSchedule, nil
+}
+
+// ResetNewsSchedule resets all changes to the "news_schedule" field.
+func (m *UserMutation) ResetNewsSchedule() {
+	m.news_schedule = nil
 }
 
 // Where appends a list predicates to the UserMutation builder.
@@ -281,12 +318,15 @@ func (m *UserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 2)
+	fields := make([]string, 0, 3)
 	if m.categories != nil {
 		fields = append(fields, user.FieldCategories)
 	}
-	if m.schedule != nil {
-		fields = append(fields, user.FieldSchedule)
+	if m.pill_schedule != nil {
+		fields = append(fields, user.FieldPillSchedule)
+	}
+	if m.news_schedule != nil {
+		fields = append(fields, user.FieldNewsSchedule)
 	}
 	return fields
 }
@@ -298,8 +338,10 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case user.FieldCategories:
 		return m.Categories()
-	case user.FieldSchedule:
-		return m.Schedule()
+	case user.FieldPillSchedule:
+		return m.PillSchedule()
+	case user.FieldNewsSchedule:
+		return m.NewsSchedule()
 	}
 	return nil, false
 }
@@ -311,8 +353,10 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 	switch name {
 	case user.FieldCategories:
 		return m.OldCategories(ctx)
-	case user.FieldSchedule:
-		return m.OldSchedule(ctx)
+	case user.FieldPillSchedule:
+		return m.OldPillSchedule(ctx)
+	case user.FieldNewsSchedule:
+		return m.OldNewsSchedule(ctx)
 	}
 	return nil, fmt.Errorf("unknown User field %s", name)
 }
@@ -329,12 +373,19 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetCategories(v)
 		return nil
-	case user.FieldSchedule:
+	case user.FieldPillSchedule:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetSchedule(v)
+		m.SetPillSchedule(v)
+		return nil
+	case user.FieldNewsSchedule:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNewsSchedule(v)
 		return nil
 	}
 	return fmt.Errorf("unknown User field %s", name)
@@ -397,8 +448,11 @@ func (m *UserMutation) ResetField(name string) error {
 	case user.FieldCategories:
 		m.ResetCategories()
 		return nil
-	case user.FieldSchedule:
-		m.ResetSchedule()
+	case user.FieldPillSchedule:
+		m.ResetPillSchedule()
+		return nil
+	case user.FieldNewsSchedule:
+		m.ResetNewsSchedule()
 		return nil
 	}
 	return fmt.Errorf("unknown User field %s", name)

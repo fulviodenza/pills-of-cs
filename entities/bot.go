@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/barthr/newsapi"
 	repositories "github.com/pills-of-cs/adapters/repositories"
 
 	bt "github.com/SakoDroid/telego"
@@ -12,14 +13,16 @@ import (
 )
 
 type BotConf struct {
-	Bot          bt.Bot
-	NotionClient notionapi.Client
-	HelpMessage  string
-	UserRepo     repositories.UserRepo
-	Pills        []Pill
-	Categories   map[string][]Pill
-	Schedules    map[string]time.Time
-	Scheduler    *cron.Cron
+	Bot           bt.Bot
+	NotionClient  notionapi.Client
+	NewsClient    *newsapi.Client
+	HelpMessage   string
+	UserRepo      repositories.UserRepo
+	Pills         []Pill
+	Categories    map[string][]Pill
+	Schedules     map[string]time.Time
+	PillScheduler *cron.Cron
+	NewsScheduler *cron.Cron
 }
 
 type IBot interface {

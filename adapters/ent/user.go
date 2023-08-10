@@ -18,8 +18,10 @@ type User struct {
 	ID string `json:"id,omitempty"`
 	// Categories holds the value of the "categories" field.
 	Categories []string `json:"categories,omitempty"`
-	// Schedule holds the value of the "schedule" field.
-	Schedule string `json:"schedule,omitempty"`
+	// PillSchedule holds the value of the "pill_schedule" field.
+	PillSchedule string `json:"pill_schedule,omitempty"`
+	// NewsSchedule holds the value of the "news_schedule" field.
+	NewsSchedule string `json:"news_schedule,omitempty"`
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -29,7 +31,7 @@ func (*User) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case user.FieldCategories:
 			values[i] = new([]byte)
-		case user.FieldID, user.FieldSchedule:
+		case user.FieldID, user.FieldPillSchedule, user.FieldNewsSchedule:
 			values[i] = new(sql.NullString)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type User", columns[i])
@@ -60,11 +62,17 @@ func (u *User) assignValues(columns []string, values []any) error {
 					return fmt.Errorf("unmarshal field categories: %w", err)
 				}
 			}
-		case user.FieldSchedule:
+		case user.FieldPillSchedule:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field schedule", values[i])
+				return fmt.Errorf("unexpected type %T for field pill_schedule", values[i])
 			} else if value.Valid {
-				u.Schedule = value.String
+				u.PillSchedule = value.String
+			}
+		case user.FieldNewsSchedule:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field news_schedule", values[i])
+			} else if value.Valid {
+				u.NewsSchedule = value.String
 			}
 		}
 	}
@@ -97,8 +105,11 @@ func (u *User) String() string {
 	builder.WriteString("categories=")
 	builder.WriteString(fmt.Sprintf("%v", u.Categories))
 	builder.WriteString(", ")
-	builder.WriteString("schedule=")
-	builder.WriteString(u.Schedule)
+	builder.WriteString("pill_schedule=")
+	builder.WriteString(u.PillSchedule)
+	builder.WriteString(", ")
+	builder.WriteString("news_schedule=")
+	builder.WriteString(u.NewsSchedule)
 	builder.WriteByte(')')
 	return builder.String()
 }
