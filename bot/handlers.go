@@ -112,7 +112,6 @@ func (b *Bot) News(ctx context.Context, up *objects.Update) {
 		}
 		sources, err := b.NewsClient.GetEverything(ctx, sourceParams)
 		if err == nil && len(sources.Articles) != 0 {
-
 			articles := sources.Articles
 			sort.Slice(articles, func(i, j int) bool {
 				return sources.Articles[i].PublishedAt.Before(sources.Articles[i].PublishedAt)
@@ -124,6 +123,8 @@ func (b *Bot) News(ctx context.Context, up *objects.Update) {
 				msg += "from " + sources.Articles[i].URL + "\n"
 			}
 		} else {
+			log.Printf("err: %v", err)
+			log.Printf("articles len: %v", len(sources.Articles))
 			msg += "sources missing!"
 		}
 	}
