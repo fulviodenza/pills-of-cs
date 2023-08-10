@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -34,18 +35,42 @@ func (b *Bot) sendMessage(msg string, up *objects.Update, formatMarkdown bool) {
 	if formatMarkdown {
 		parseMode = "Markdown"
 	}
-	_, err := b.Bot.SendMessage(up.Message.Chat.Id, msg, parseMode, 0, false, false)
-	if err != nil {
-		log.Printf("[SendMessage]: sending message to user: %v", err.Error())
+
+	if len(msg) >= 4096 {
+		msgs := splitString(msg)
+		for _, m := range msgs {
+			_, err := b.Bot.SendMessage(up.Message.Chat.Id, m, parseMode, 0, false, false)
+			if err != nil {
+				log.Printf("[SendMessage]: sending message to user: %v", err.Error())
+			}
+		}
+	} else {
+		_, err := b.Bot.SendMessage(up.Message.Chat.Id, msg, parseMode, 0, false, false)
+		if err != nil {
+			log.Printf("[SendMessage]: sending message to user: %v", err.Error())
+		}
 	}
 }
 
+func splitString(s string) []string {
+	if len(s) <= 0 {
+		return nil
+	}
+
+	maxGroupLen := 4095
+	if len(s) < maxGroupLen {
+		maxGroupLen = len(s)
+	}
+	group := s[:maxGroupLen]
+	return append([]string{group}, splitString(s[maxGroupLen:])...)
+}
+
 func (b *Bot) Run(ctx context.Context, up *objects.Update) {
-	b.sendMessage("Welcome to the pills-of-cs bot! Press `/pill` to request a pill or `/help` to get informations about the bot", up, false)
+	b.sendMessage("Welcome to the pills-of-cs bot! Press `/pill` to request a pill or `/help` to get informations about the bot", up, true)
 }
 
 func (b *Bot) Help(ctx context.Context, up *objects.Update) {
-	b.sendMessage(string(b.HelpMessage), up, false)
+	b.sendMessage(string(b.HelpMessage), up, true)
 }
 
 func (b *Bot) Pill(ctx context.Context, up *objects.Update) {
@@ -68,7 +93,7 @@ func (b *Bot) Pill(ctx context.Context, up *objects.Update) {
 		randomIndex = utils.MakeTimestamp(len(randomCategoryP))
 		msg = randomCategoryP[randomIndex].Title + ": " + randomCategoryP[randomIndex].Body
 	}
-	b.sendMessage(msg, up, false)
+	b.sendMessage(msg, up, true)
 }
 
 func (b *Bot) News(ctx context.Context, up *objects.Update) {
@@ -80,23 +105,29 @@ func (b *Bot) News(ctx context.Context, up *objects.Update) {
 		newsCategories += "technology"
 	}
 
-	sourceParams := &newsapi.EverythingParameters{}
 	for _, c := range categories {
-		newsCategories += c + "&"
-	}
-	sourceParams.Keywords = newsCategories
-	sourceParams.Language = "en"
-
-	sources, err := b.NewsClient.GetEverything(ctx, sourceParams)
-	if err == nil && len(sources.Articles) != 0 {
-		for i := 0; i < 10; i++ {
-			msg += "- *" + sources.Articles[i].Title + "*\n"
-			msg += sources.Articles[i].Description + "\n"
-			msg += "from " + sources.Articles[i].URL + "\n"
+		sourceParams := &newsapi.EverythingParameters{
+			Keywords: c + "&",
+			Language: "en",
 		}
-	} else {
-		msg += "sources missing!"
+		sources, err := b.NewsClient.GetEverything(ctx, sourceParams)
+		if err == nil && len(sources.Articles) != 0 {
+
+			articles := sources.Articles
+			sort.Slice(articles, func(i, j int) bool {
+				return sources.Articles[i].PublishedAt.Before(sources.Articles[i].PublishedAt)
+			})
+
+			for i := 0; i < 3; i++ {
+				msg += "- *" + sources.Articles[i].Title + "*\n"
+				msg += sources.Articles[i].Description + "\n"
+				msg += "from " + sources.Articles[i].URL + "\n"
+			}
+		} else {
+			msg += "sources missing!"
+		}
 	}
+
 	b.sendMessage(msg, up, true)
 }
 
@@ -154,7 +185,7 @@ func (b *Bot) SchedulePill(ctx context.Context, up *objects.Update) {
 	if err != nil {
 		log.Printf("[SchedulePill] got error: %v", err)
 	}
-	b.sendMessage(msg, up, false)
+	b.sendMessage(msg, up, true)
 }
 
 func (b *Bot) ScheduleNews(ctx context.Context, up *objects.Update) {
