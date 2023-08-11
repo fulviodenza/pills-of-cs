@@ -14,7 +14,7 @@ Commands available for this bot, for now are:
 - `/get_tags`: to get available tags to subscribe to;
 - `/choose_tag [tag1] [tag2] [...]`: to get subscribed to a specific tag;
 - `/schedule_pill [HH:MM] [Timezone]`: to schedule a pill at a give hour and minute of every day;
-- `/set_news`: to start receiving news;
+- `/news`: to receive a set of news about your interested topics;
 - `/schedule_news [HH:MM] [Timezone]`: to schedule the receive of a set of news over various topics;
 # Next features
 Features to be implemented in the next future:
