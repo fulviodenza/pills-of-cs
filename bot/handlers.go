@@ -223,20 +223,19 @@ func (b *Bot) ScheduleNews(ctx context.Context, up *objects.Update) {
 	b.sendMessage(msg, up, true)
 }
 
-func (b *Bot) setCron(ctx context.Context, up *objects.Update, schedulerType string) (string, error) {
+func (b *Bot) setCron(ctx context.Context, up *objects.Update, schedulerType string) (crontab string, err error) {
 	var msg string
 	id := strconv.Itoa(up.Message.Chat.Id)
 	// args[1] contains the time HH:MM, args[2] contains the timezone
 	args := strings.SplitN(up.Message.Text, " ", -1)
-
 	if len(args) != 3 {
 		msg = "Failed parsing provided time"
+	} else {
+		crontab, err = parser.ValidateSchedule(args[1], args[2])
+		if err != nil {
+			msg = "Failed parsing provided time"
+		}
 	}
-	crontab, err := parser.ValidateSchedule(args[1], args[2])
-	if err != nil {
-		msg = "Failed parsing provided time"
-	}
-
 	switch schedulerType {
 	case "pill":
 		err = b.UserRepo.SavePillSchedule(ctx, id, crontab)
