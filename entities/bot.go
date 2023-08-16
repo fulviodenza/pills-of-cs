@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/barthr/newsapi"
 	repositories "github.com/pills-of-cs/adapters/repositories"
 
 	bt "github.com/SakoDroid/telego"
+	"github.com/barthr/newsapi"
 	"github.com/jomei/notionapi"
 	"github.com/robfig/cron/v3"
 )

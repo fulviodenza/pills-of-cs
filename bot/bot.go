@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/barthr/newsapi"
 	"github.com/pills-of-cs/adapters/ent"
 	repositories "github.com/pills-of-cs/adapters/repositories"
 	"github.com/pills-of-cs/entities"
@@ -21,6 +20,7 @@ import (
 	cfg "github.com/SakoDroid/telego/configs"
 	"github.com/SakoDroid/telego/objects"
 	objs "github.com/SakoDroid/telego/objects"
+	"github.com/barthr/newsapi"
 	"github.com/jomei/notionapi"
 	"github.com/robfig/cron/v3"
 )

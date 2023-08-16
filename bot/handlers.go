@@ -10,11 +10,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/SakoDroid/telego/objects"
-	"github.com/barthr/newsapi"
 	"github.com/pills-of-cs/entities"
 	"github.com/pills-of-cs/parser"
 	"github.com/pills-of-cs/utils"
+
+	"github.com/SakoDroid/telego/objects"
+	"github.com/barthr/newsapi"
 )
 
 var _ IBot = (*Bot)(nil)
