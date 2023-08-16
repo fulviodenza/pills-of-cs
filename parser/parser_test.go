@@ -39,7 +39,7 @@ func TestParseSchedule(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ParseSchedule(tt.args.s, "Europe/Rome")
+			got, err := ValidateSchedule(tt.args.s, "Europe/Rome")
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ParseSchedule() error = %v, wantErr %v", err, tt.wantErr)
 				return

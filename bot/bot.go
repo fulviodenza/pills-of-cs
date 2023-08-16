@@ -2,7 +2,6 @@ package bot
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -28,15 +27,18 @@ import (
 // APIs constants
 const (
 	NOTION_TOKEN       = "NOTION_TOKEN"
+	NOTION_DATABASE_ID = "NOTION_DATABASE_ID"
 	TELEGRAM_TOKEN     = "TELEGRAM_TOKEN"
 	NEWS_TOKEN         = "NEWS_TOKEN"
-	PAGE_ID            = "48b530629463419ca92e22cc6ef50dab"
-	PILLS_ASSET        = "./assets/pills.json"
-	HELP_MESSAGE_ASSET = "./assets/help_message.txt"
 	DATABASE_URL       = "DATABASE_URL"
 )
 
-var (
+const (
+	CATEGORIES_ASSET   = "./assets/categories.txt"
+	HELP_MESSAGE_ASSET = "./assets/help_message.txt"
+)
+
+const (
 	COMMAND_START                     = "/start"
 	COMMAND_PILL                      = "/pill"
 	COMMAND_HELP                      = "/help"
@@ -48,15 +50,10 @@ var (
 	COMMAND_SCHEDULE_NEWS             = "/schedule_news"
 )
 
-var PRIVATE_CHAT_TYPE = "private"
-var GROUP_CHAT_TYPE = "group"
-var SUPERGROUP_CHAT_TYPE = "supergroup"
-
-var (
-	databaseUrl   string
-	telegramToken string
-	newsToken     string
-	notionToken   string
+const (
+	PRIVATE_CHAT_TYPE    = "private"
+	GROUP_CHAT_TYPE      = "group"
+	SUPERGROUP_CHAT_TYPE = "supergroup"
 )
 
 type Bot struct {
@@ -67,29 +64,22 @@ type Bot struct {
 // if the interface will not be followed, this will not compile
 var _ entities.IBot = (*Bot)(nil)
 
+// get variables from env
+var (
+	notionToken      = os.Getenv(NOTION_TOKEN)
+	notionDatabaseId = os.Getenv(NOTION_DATABASE_ID)
+	telegramToken    = os.Getenv(TELEGRAM_TOKEN)
+	newsToken        = os.Getenv(NEWS_TOKEN)
+	databaseUrl      = os.Getenv(DATABASE_URL)
+)
+
 func NewBotWithConfig() (*Bot, *ent.Client, error) {
 	ctx := context.Background()
-	var dst []byte
-	_, err := parser.Parse(PILLS_ASSET, &dst)
-	if err != nil {
+
+	helpMessage := make([]byte, 0)
+	if err := parser.Read(HELP_MESSAGE_ASSET, &helpMessage); err != nil {
 		return nil, nil, err
 	}
-
-	sp := entities.SerializedPills{}
-	json.Unmarshal(dst, &sp)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	dst = []byte{}
-	_, err = parser.Parse(HELP_MESSAGE_ASSET, &dst)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	telegramToken = os.Getenv(TELEGRAM_TOKEN)
-	databaseUrl = os.Getenv(DATABASE_URL)
-	newsToken = os.Getenv(NEWS_TOKEN)
 
 	// connect to database with the env db uri
 	client, err := ent.SetupAndConnectDatabase(databaseUrl)
@@ -120,11 +110,9 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 		return nil, nil, err
 	}
 
-	categories := map[string][]entities.Pill{}
-	for _, p := range sp.Pills {
-		for _, category := range p.Tags {
-			categories[category] = append(categories[category], p)
-		}
+	categories, err := parser.ParseCategories(CATEGORIES_ASSET)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	userRepo := repositories.UserRepo{
@@ -133,14 +121,16 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 
 	bot := &Bot{
 		&entities.BotConf{
-			Bot:          *b,
-			NotionClient: *notion_client,
-			NewsClient:   newsClient,
-			Pills:        sp.Pills,
-			Categories:   categories,
-			HelpMessage:  string(dst),
-			UserRepo:     userRepo,
-			Schedules:    map[string]time.Time{},
+			// client initialization
+			NotionClient:   *notion_client,
+			NewsClient:     newsClient,
+			TelegramClient: *b,
+			// static assets initialization
+			Categories:  categories,
+			HelpMessage: string(helpMessage),
+			// database initialization
+			UserRepo:  userRepo,
+			Schedules: map[string]time.Time{},
 		},
 	}
 
@@ -215,7 +205,7 @@ func (b *Bot) recoverCrontabs(ctx context.Context, schedulerType string) error {
 }
 
 func (b *Bot) Start(ctx context.Context) {
-	updateCh := b.Bot.GetUpdateChannel()
+	updateCh := b.TelegramClient.GetUpdateChannel()
 	go func() {
 		for {
 			update := <-*updateCh
@@ -237,7 +227,7 @@ func (b *Bot) Start(ctx context.Context) {
 	for c, f := range handlers {
 		c := c
 		f := f
-		b.Bot.AddHandler(c, func(u *objs.Update) {
+		b.TelegramClient.AddHandler(c, func(u *objs.Update) {
 			if strings.Contains(u.Message.Text, c) {
 				f(ctx, u)
 			}
