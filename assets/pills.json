@@ -39,7 +39,7 @@
         {
             "title": "Do not return []byte in Go",
             "body": "Returning bytes forces a heap allocation for the returned slice. Since the slice's memory must survive the function's lifespan, the escape analysis has to move it to the heap, where allocations are expensive and put pressure on the garbage collector. Since Go 1.12, the inliner learned how to inline functions that call other functions. We can use this capability to make our allocating APIs as efficient as any other. (https://go.dev/play/p/lvY_5h-qPPf). While dst normally escapes to the heap, in practice the X25519 body will be inlined in the caller along with the dst allocation, and if the caller is careful not to let it escape, it will stay on the caller's stack. It will be as if the caller were using the hidden, less ergonomic, and more efficient x25519 API.",
-            "tags": ["programming", "go"]
+            "tags": ["programming", "golang"]
         },
         {
             "title": "Consistencies",
@@ -54,7 +54,7 @@
         {
             "title": "Generics implementation - GC Shape Stenciling",
             "body": "https://go.googlesource.com/proposal/+/refs/heads/master/design/generics-implementation-gcshape.md",
-            "tags": ["programming", "go"]
+            "tags": ["programming", "golang"]
         },
         {
             "title": "Live Reloading Function",
@@ -64,27 +64,27 @@
         {
             "title": "Type Embedding in Go",
             "body": "We use embedding to promote all the fields and methods of an embedded type",
-            "tags": ["programming", "go"]
+            "tags": ["programming", "golang"]
         },
         {
             "title": "[Go] Slices",
             "body": "In Go a slice is backed by an array. That means the slice’s data is stored contiguously in an array data structure. A slice also handles the logic of adding an element if the backing array is full or shrinking the backing array if it’s almost empty. Internally a slice holds a pointer to the backing array plus a length and a capacity. `arr := make([]int, 5, 10)` The first argument, representing the len is mandatory, the second, the capacity, is optional. 2 slices referring to the same backing array → if we change `s1[i]` or `s2[j]` where `&s1[i] = &s2[j]` the effect will be visible on both slices. \ntip: if a function returns a slice, we should favor returning a nil slice instead of an empty slice",
-            "tags": ["programming", "go"]
+            "tags": ["programming", "golang"]
         },
         {
             "title": "[Go] Interfaces",
             "body": "We use interfaces to create common abstractions that multiple objects can implements. Go interfaces are different because they are satisfied implicitly. There is no explicit keyword like `implements` to mark that an object x implements interface y.",
-            "tags": ["programming", "go"]
+            "tags": ["programming", "golang"]
         },
         {
             "title": "[Go] Map",
             "body": "A map provides an unordered collection of key-value pairs in which all the keys are distinct. In Go, a map is based on the hash table data structure. Internally, a hash table is an array of buckets, and each bucket is a pointer to an array of key-value pairs. In case of insertion in a full bucket (bucket overflow), go creates another bucket of eight elements and links the previous bucket to it.\n Tip: a map can always grow in memory, but it never shrinks. Hence, if it leads to some memory issues, you can try different options, such as forcing Go to recreate the map or using pointers.",
-            "tags": ["programming", "go"]
+            "tags": ["programming", "golang"]
         },
         {
             "title": "[Go] Garbage Collection",
             "body": "Garbage collection is a form of automatic memory management, which reclaims memory occupied by objects that are no longer in use by the program. In Go, garbage collection (GC) is implemented using the mark-sweep algorithm.\n Go's GC is a concurrent, generational, and incremental garbage collector. It is concurrent in that it runs in parallel with the main program, thus reducing the amount of time spent on GC. Generational GC divides the heap into two parts: a young generation, which contains recently created objects, and an old generation, which contains objects that have been around for a while. The young generation is collected more frequently than the old, as most objects are short-lived. GC is incremental in that it splits its work into small, frequent iterations, which makes it less disruptive to the program.\n Finally, Go has a `stop-the-world` mechanism, which pauses the program while the GC is running. This ensures that the GC can safely access all the objects in the heap without being disturbed.\n Go's GC is designed to be efficient and unobtrusive. It minimizes the time spent on GC by running in parallel with the main program, and it is incremental, so it runs in small, frequent iterations that don't disrupt the program. Additionally, the stop-the-world mechanism pauses the program during GC, so that the GC can safely access all the objects in the heap.\n By employing the mark-sweep algorithm, Go's garbage collection (GC) is a concurrent, generational, and incremental garbage collector. It is designed to be efficient and unobtrusive, as it runs in parallel with the main program and takes only small, frequent iterations to complete. Additionally, it pauses the program during GC through its `stop-the-world` mechanism, allowing it to safely access all the objects in the heap.",
-            "tags": ["programming", "go"]
+            "tags": ["programming", "golang"]
         },
         {
             "title": "Rest API",
@@ -94,7 +94,7 @@
         {
             "title": "[Go] Rune",
             "body": "a rune is a Unicode code point (commonly called character). A rune is an alias of int32. This is relevant because when we iterate over a string we have to keep in mind that we are iterating over the number of runes, not the bytes while some special characters (Æ) aren’t encoded in a single byte, it requires 2 bytes. So basically we badly encode that character.\nRunes are the way to refer to Unicode code points in Go and they are represented as an alias of int32. This is relevant when iterating over strings because some special characters require more than a single byte to be encoded. For example, the character Æ requires two bytes. In order to avoid badly encoding this character, we should use runes when iterating over strings.\nMoreover, runes are also essential for comparing strings, as they can be compared to each other directly. This increases the efficiency of string comparison operations, as the process does not need to be done byte-by-byte. Additionally, Unicode strings can be checked for equality using runes, as the process does not involve conversion to other encodings. Finally, runes are used extensively in regular expressions to match specific Unicode characters.\nRunes are also useful for manipulating strings. For example, they can be used to replace characters, as they are aware of the Unicode code points. This allows us to replace special characters without having to worry about encoding. Additionally, runes can also be used to extract substrings from strings, as they enable us to specify the exact index of the character to start from.",
-            "tags": ["programming", "go"]
+            "tags": ["programming", "golang"]
         }
     ]
 }
