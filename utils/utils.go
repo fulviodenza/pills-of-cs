@@ -7,10 +7,8 @@ import (
 )
 
 func MakeTimestamp(len int) int64 {
-	millisec := int64(time.Millisecond)
-	now := time.Now().UnixNano()
-	division := now / millisec
-	return (division) % int64(len)
+	rand.Seed(time.Now().Unix())
+	return (time.Now().UnixNano() / int64(time.Millisecond)) % int64(len)
 }
 
 func Pick[K comparable, V any](m map[K]V) V {

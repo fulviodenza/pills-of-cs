@@ -24,7 +24,7 @@ func main() {
 	// Create the db and the collection
 	bot.UserRepo.Client = client
 
-	err = bot.Bot.Run()
+	err = bot.TelegramClient.Run()
 	if err != nil {
 		log.Fatalf("got error: %v", err)
 		os.Exit(1)

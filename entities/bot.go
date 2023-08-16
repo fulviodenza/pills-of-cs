@@ -13,14 +13,16 @@ import (
 )
 
 type BotConf struct {
-	Bot           bt.Bot
-	NotionClient  notionapi.Client
-	NewsClient    *newsapi.Client
-	HelpMessage   string
-	UserRepo      repositories.UserRepo
-	Pills         []Pill
-	Categories    map[string][]Pill
-	Schedules     map[string]time.Time
+	TelegramClient bt.Bot
+	NotionClient   notionapi.Client
+	NewsClient     *newsapi.Client
+
+	HelpMessage string
+	Categories  []string
+
+	UserRepo  repositories.UserRepo
+	Schedules map[string]time.Time
+
 	PillScheduler *cron.Cron
 	NewsScheduler *cron.Cron
 }

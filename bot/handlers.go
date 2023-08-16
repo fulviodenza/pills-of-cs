@@ -2,23 +2,28 @@ package bot
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
-	"math/rand"
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 
-	"github.com/pills-of-cs/entities"
 	"github.com/pills-of-cs/parser"
 	"github.com/pills-of-cs/utils"
 
 	"github.com/SakoDroid/telego/objects"
 	"github.com/barthr/newsapi"
+	"github.com/jomei/notionapi"
 )
 
 var _ IBot = (*Bot)(nil)
+
+type notionDbRow struct {
+	Tags notionapi.MultiSelectProperty `json:"Tags"`
+	Text notionapi.RichTextProperty    `json:"Text"`
+	Name notionapi.TitleProperty       `json:"Name"`
+}
 
 type IBot interface {
 	Run(ctx context.Context, up *objects.Update)
@@ -40,13 +45,13 @@ func (b *Bot) sendMessage(msg string, up *objects.Update, formatMarkdown bool) {
 	if len(msg) >= 4096 {
 		msgs := splitString(msg)
 		for _, m := range msgs {
-			_, err := b.Bot.SendMessage(up.Message.Chat.Id, m, parseMode, 0, false, false)
+			_, err := b.TelegramClient.SendMessage(up.Message.Chat.Id, m, parseMode, 0, false, false)
 			if err != nil {
 				log.Printf("[SendMessage]: sending message to user: %v", err.Error())
 			}
 		}
 	} else {
-		_, err := b.Bot.SendMessage(up.Message.Chat.Id, msg, parseMode, 0, false, false)
+		_, err := b.TelegramClient.SendMessage(up.Message.Chat.Id, msg, parseMode, 0, false, false)
 		if err != nil {
 			log.Printf("[SendMessage]: sending message to user: %v", err.Error())
 		}
@@ -81,20 +86,40 @@ func (b *Bot) Pill(ctx context.Context, up *objects.Update) {
 		log.Printf("[Pill]: failed getting tags: %v", err.Error())
 	}
 
-	var randomCategory, randomIndex int64
-	var randomCategoryP []entities.Pill
-	rand.Seed(time.Now().Unix())
-
+	choosenCategory := b.Categories[utils.MakeTimestamp(len(b.Categories))]
 	if len(subscribedTags) > 0 {
-		randomCategory = utils.MakeTimestamp(len(subscribedTags))
-		randomIndex = utils.MakeTimestamp(len(b.Categories[subscribedTags[randomCategory]]))
-		msg = b.Categories[subscribedTags[randomCategory]][randomIndex].Title + ": " + b.Categories[subscribedTags[randomCategory]][randomIndex].Body
-	} else {
-		randomCategoryP = utils.Pick(b.Categories)
-		randomIndex = utils.MakeTimestamp(len(randomCategoryP))
-		msg = randomCategoryP[randomIndex].Title + ": " + randomCategoryP[randomIndex].Body
+		choosenCategory = b.Categories[utils.MakeTimestamp(len(subscribedTags))]
 	}
-	b.sendMessage(msg, up, true)
+
+	res, err := b.NotionClient.Database.Query(ctx, notionapi.DatabaseID(notionDatabaseId), &notionapi.DatabaseQueryRequest{
+		Filter: notionapi.PropertyFilter{
+			Property: "Tags",
+			MultiSelect: &notionapi.MultiSelectFilterCondition{
+				Contains: choosenCategory,
+			},
+		},
+	})
+	if err != nil {
+		log.Printf("[Pill]: failed retrieving pill: %v", err.Error())
+	}
+
+	if res != nil {
+		row := notionDbRow{}
+		rowProps := make([]byte, 0)
+
+		if rowProps, err = json.Marshal(res.Results[utils.MakeTimestamp(len(res.Results))].Properties); err != nil {
+			log.Printf("[Pill]: failed marshaling pill: %v", err.Error())
+		}
+		if err = json.Unmarshal(rowProps, &row); err != nil {
+			log.Printf("[Pill]: failed unmarshaling pill: %v", err.Error())
+		}
+
+		msg = row.Name.Title[0].Text.Content + ": "
+		for _, c := range row.Text.RichText {
+			msg += c.Text.Content
+		}
+		b.sendMessage(msg, up, true)
+	}
 }
 
 func (b *Bot) News(ctx context.Context, up *objects.Update) {
@@ -135,8 +160,8 @@ func (b *Bot) News(ctx context.Context, up *objects.Update) {
 
 func (b *Bot) GetTags(ctx context.Context, up *objects.Update) {
 	var msg = ""
-	for k := range b.Categories {
-		msg += fmt.Sprintf("- %s\n", k)
+	for _, v := range b.Categories {
+		msg += fmt.Sprintf("- %s\n", v)
 	}
 	if len(b.Categories) == 0 {
 		msg = "empty categories"
@@ -207,7 +232,7 @@ func (b *Bot) setCron(ctx context.Context, up *objects.Update, schedulerType str
 	if len(args) != 3 {
 		msg = "Failed parsing provided time"
 	}
-	crontab, err := parser.ParseSchedule(args[1], args[2])
+	crontab, err := parser.ValidateSchedule(args[1], args[2])
 	if err != nil {
 		msg = "Failed parsing provided time"
 	}

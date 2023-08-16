@@ -10,24 +10,23 @@ import (
 	"github.com/pills-of-cs/utils"
 )
 
-func Parse(filename string, dst *[]byte) ([]byte, error) {
+func Read(filename string, dst *[]byte) error {
 	f, err := os.Open(filename)
 	if err != nil {
 		log.Fatal("[parse]: ", err)
-		return []byte{}, err
+		return err
 	}
 
 	bytes, err := io.ReadAll(f)
 	if err != nil {
-		return []byte{}, err
+		return err
 	}
 
 	*dst = bytes
-
-	return *dst, nil
+	return nil
 }
 
-func ParseSchedule(s, tz string) (string, error) {
+func ValidateSchedule(s, tz string) (string, error) {
 	// times contains an array with two elements [Hours, Minutes]
 	times := strings.SplitN(s, ":", -1)
 	// in the crontab minutes come as first field
@@ -35,4 +34,15 @@ func ParseSchedule(s, tz string) (string, error) {
 		return "", fmt.Errorf("error validating time")
 	}
 	return fmt.Sprintf("CRON_TZ=%s %s %s * * *", tz, times[1], times[0]), nil
+}
+
+func ParseCategories(filename string) ([]string, error) {
+	dst := make([]byte, 0)
+	err := Read(filename, &dst)
+	if err != nil {
+		return nil, err
+	}
+
+	categories := strings.Split(string(dst), "\n")
+	return categories, nil
 }
