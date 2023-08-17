@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/pills-of-cs/parser"
 	"github.com/pills-of-cs/utils"
@@ -88,6 +90,7 @@ func (b *Bot) Pill(ctx context.Context, up *objects.Update) {
 
 	choosenCategory := b.Categories[utils.MakeTimestamp(len(b.Categories))]
 	if len(subscribedTags) > 0 {
+		rand.Seed(time.Now().Unix())
 		choosenCategory = b.Categories[utils.MakeTimestamp(len(subscribedTags))]
 	}
 
@@ -149,8 +152,7 @@ func (b *Bot) News(ctx context.Context, up *objects.Update) {
 				msg.WriteString("from " + sources.Articles[i].URL + "\n")
 			}
 		} else {
-			log.Printf("err: %v", err)
-			log.Printf("articles len: %v", len(sources.Articles))
+			log.Printf("err: %v; articles len: %v", err, len(sources.Articles))
 			msg.WriteString("sources missing!")
 		}
 	}
