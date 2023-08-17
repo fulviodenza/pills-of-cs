@@ -3,7 +3,7 @@ definitions, curiosity, and best practices in small pills, news about
 computer science world (to be implemented).
 
 `/start`: To start using the bot run;
-`/pills`: To get a random pill;
+`/pill`: To get a random pill;
 `/choose_tags arg1 arg2 ...`: To subscribe to one or more categories from `/get_tags`;
 `/get_tags`: Get all available tags you can subscribe to;
 `/get_subscribed_tags`: Get all tags you're subscribed to;
