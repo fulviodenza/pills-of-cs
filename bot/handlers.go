@@ -146,10 +146,10 @@ func (b *Bot) News(ctx context.Context, up *objects.Update) {
 				return sources.Articles[i].PublishedAt.Before(sources.Articles[i].PublishedAt)
 			})
 
-			for i := 0; i < 3; i++ {
-				msg.WriteString("- *" + sources.Articles[i].Title + "*\n")
-				msg.WriteString(sources.Articles[i].Description + "\n")
-				msg.WriteString("from " + sources.Articles[i].URL + "\n")
+			for _, a := range sources.Articles {
+				msg.WriteString("- *" + a.Title + "*\n")
+				msg.WriteString(a.Description + "\n")
+				msg.WriteString("from " + a.URL + "\n")
 			}
 		} else {
 			log.Printf("err: %v; articles len: %v", err, len(sources.Articles))
@@ -212,6 +212,7 @@ func (b *Bot) ChooseTags(ctx context.Context, up *objects.Update) {
 func (b *Bot) SchedulePill(ctx context.Context, up *objects.Update) {
 	msg, err := b.setCron(ctx, up, "pill")
 	if err != nil {
+		b.sendMessage("failed validating the inserted time, try using the format `/schedule_pill HH:MM Timezone`", up, true)
 		log.Printf("[SchedulePill] got error: %v", err)
 	}
 	b.sendMessage(msg.String(), up, true)
