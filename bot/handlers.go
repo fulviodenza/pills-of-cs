@@ -205,7 +205,6 @@ func (b *Bot) ChooseTags(ctx context.Context, up *objects.Update) {
 		log.Printf("[ChooseTags]: failed adding tag to user: %v", err.Error())
 	}
 
-	log.Printf("[ChooseTags]: return operation exit")
 	b.sendMessage("tags updated", up, false)
 }
 
@@ -227,37 +226,44 @@ func (b *Bot) ScheduleNews(ctx context.Context, up *objects.Update) {
 }
 
 func (b *Bot) UnscheduleNews(ctx context.Context, up *objects.Update) {
-	msg := ""
 	id := strconv.Itoa(up.Message.Chat.Id)
 	cronId, ok := b.NewsMap[id]
 	if !ok {
 		log.Printf("[UnscheduleNews] id not found in newsMap: %v", id)
-		msg = "user not found in schedules"
+		b.sendMessage("user not found in schedules", up, false)
 	} else {
 		b.NewsScheduler.Remove(cronId)
 		b.NewsMu.Lock()
 		delete(b.NewsMap, id)
 		b.NewsMu.Unlock()
-		msg = "news unscheduled"
+		err := b.UserRepo.RemoveNewsSchedule(ctx, id)
+		if err != nil {
+			log.Printf("[UnscheduleNews] error from db: %v", err)
+			b.sendMessage("user not found in db", up, false)
+		}
+		b.sendMessage("news unscheduled", up, false)
 	}
-	b.sendMessage(msg, up, false)
 }
 
 func (b *Bot) UnschedulePill(ctx context.Context, up *objects.Update) {
-	msg := ""
 	id := strconv.Itoa(up.Message.Chat.Id)
 	cronId, ok := b.PillMap[id]
 	if !ok {
-		log.Printf("[UnschedulePill] id not found in pillsMap: %v", id)
-		msg = "user not found in schedules"
+		log.Printf("[UnschedulePill] id not found in pillMap: %v", id)
+		b.sendMessage("user not found in schedules", up, false)
 	} else {
 		b.PillScheduler.Remove(cronId)
 		b.PillsMu.Lock()
 		delete(b.PillMap, id)
 		b.PillsMu.Unlock()
-		msg = "news unscheduled"
+		err := b.UserRepo.RemovePillSchedule(ctx, id)
+		if err != nil {
+			log.Printf("[UnschedulePill] error from db: %v", err)
+			b.sendMessage("user not found in db", up, false)
+		} else {
+			b.sendMessage("pill unscheduled", up, false)
+		}
 	}
-	b.sendMessage(msg, up, false)
 }
 
 func (b *Bot) setCron(ctx context.Context, up *objects.Update, schedulerType string) (strings.Builder, error) {
