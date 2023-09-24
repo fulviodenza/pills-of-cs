@@ -50,6 +50,7 @@ const (
 	COMMAND_SCHEDULE_NEWS             = "/schedule_news"
 	COMMAND_UNSCHEDULE_NEWS           = "/unschedule_news"
 	COMMAND_UNSCHEDULE_PILL           = "/unschedule_pill"
+	COMMAND_QUIZ                      = "/quiz"
 )
 
 const (
@@ -261,6 +262,7 @@ func (b *Bot) Start(ctx context.Context) {
 		COMMAND_SCHEDULE_NEWS:             b.ScheduleNews,
 		COMMAND_UNSCHEDULE_NEWS:           b.UnscheduleNews,
 		COMMAND_UNSCHEDULE_PILL:           b.UnschedulePill,
+		COMMAND_QUIZ:                      b.Quiz,
 	}
 	for c, f := range handlers {
 		c := c
