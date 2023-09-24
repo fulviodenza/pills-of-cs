@@ -27,7 +27,7 @@ type notionDbRow struct {
 	Name notionapi.TitleProperty       `json:"Name"`
 }
 
-type IBot interface {
+type Commands interface {
 	Run(ctx context.Context, up *objects.Update)
 	Pill(ctx context.Context, up *objects.Update)
 	Help(ctx context.Context, up *objects.Update)
@@ -226,6 +226,40 @@ func (b *Bot) ScheduleNews(ctx context.Context, up *objects.Update) {
 	b.sendMessage(msg.String(), up, true)
 }
 
+func (b *Bot) UnscheduleNews(ctx context.Context, up *objects.Update) {
+	msg := ""
+	id := strconv.Itoa(up.Message.Chat.Id)
+	cronId, ok := b.BotConf.NewsMap[id]
+	if !ok {
+		log.Printf("[UnscheduleNews] id not found in newsMap: %v", id)
+		msg = "user not found in schedules"
+	} else {
+		b.NewsScheduler.Remove(cronId)
+		b.NewsMu.Lock()
+		delete(b.NewsMap, id)
+		b.NewsMu.Unlock()
+		msg = "news unscheduled"
+	}
+	b.sendMessage(msg, up, false)
+}
+
+func (b *Bot) UnschedulePill(ctx context.Context, up *objects.Update) {
+	msg := ""
+	id := strconv.Itoa(up.Message.Chat.Id)
+	cronId, ok := b.BotConf.PillMap[id]
+	if !ok {
+		log.Printf("[UnschedulePill] id not found in pillsMap: %v", id)
+		msg = "user not found in schedules"
+	} else {
+		b.PillScheduler.Remove(cronId)
+		b.PillsMu.Lock()
+		delete(b.PillMap, id)
+		b.PillsMu.Unlock()
+		msg = "news unscheduled"
+	}
+	b.sendMessage(msg, up, false)
+}
+
 func (b *Bot) setCron(ctx context.Context, up *objects.Update, schedulerType string) (strings.Builder, error) {
 	var (
 		crontab string
@@ -268,21 +302,29 @@ func (b *Bot) setCron(ctx context.Context, up *objects.Update, schedulerType str
 		}()
 		switch schedulerType {
 		case "pill":
-			_, err = b.PillScheduler.AddFunc(crontab, func() {
+			uid := strconv.Itoa(up.Message.Chat.Id)
+			cronId, err := b.PillScheduler.AddFunc(crontab, func() {
 				b.Pill(ctx, u)
 			})
 			if err != nil {
 				log.Println("[SchedulePill]: got error:", err)
 				return
 			}
+			b.BotConf.PillsMu.Lock()
+			b.BotConf.PillMap[uid] = cronId
+			b.BotConf.PillsMu.Unlock()
 		case "news":
-			_, err = b.NewsScheduler.AddFunc(crontab, func() {
+			uid := strconv.Itoa(up.Message.Chat.Id)
+			cronId, err := b.NewsScheduler.AddFunc(crontab, func() {
 				b.News(ctx, u)
 			})
 			if err != nil {
 				log.Println("[ScheduleNews]: got error:", err)
 				return
 			}
+			b.BotConf.NewsMu.Lock()
+			b.BotConf.NewsMap[uid] = cronId
+			b.BotConf.NewsMu.Unlock()
 		}
 	}(ctx, up)
 
