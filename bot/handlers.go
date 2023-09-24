@@ -269,9 +269,10 @@ func (b *Bot) UnschedulePill(ctx context.Context, up *objects.Update) {
 }
 
 func (b *Bot) Quiz(ctx context.Context, up *objects.Update) {
-	question := ""
-	options := []string{}
-	optionsS := ""
+	var optionsAnswer, options = []string{}, []string{}
+	question, optionsRaw := "", ""
+	correctIndex := -1
+
 	rawPoll, err := b.NotionClient.Database.Query(ctx, notionapi.DatabaseID(notionDatabaseId), &notionapi.DatabaseQueryRequest{
 		Filter: notionapi.PropertyFilter{
 			Property: "Tags",
@@ -295,10 +296,16 @@ func (b *Bot) Quiz(ctx context.Context, up *objects.Update) {
 		}
 		question = row.Name.Title[0].Text.Content
 		for _, c := range row.Text.RichText {
-			optionsS += c.Text.Content
+			optionsRaw += c.Text.Content
 		}
-		optionsAnswer := strings.Split(optionsS, ";")
+		optionsAnswer = strings.Split(optionsRaw, ";")
 		options = strings.Split(optionsAnswer[0], ",")
+		for i, o := range options {
+			if o == optionsAnswer[1] {
+				correctIndex = i
+				break
+			}
+		}
 	}
 	poll, err := b.TelegramClient.CreatePoll(up.Message.Chat.Id, question, QUIZ_CATEGORY)
 	if err != nil {
@@ -307,7 +314,8 @@ func (b *Bot) Quiz(ctx context.Context, up *objects.Update) {
 	for _, o := range options {
 		poll.AddOption(o)
 	}
-	poll.Send(false, false, up.Message.Chat.Id)
+	poll.SetCorrectOption(correctIndex)
+	poll.Send(false, false, up.Message.MessageId)
 }
 func (b *Bot) setCron(ctx context.Context, up *objects.Update, schedulerType string) (strings.Builder, error) {
 	var (
