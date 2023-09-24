@@ -157,6 +157,12 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 			// database initialization
 			UserRepo:  userRepo,
 			Schedules: map[string]time.Time{},
+
+			NewsMu:  sync.Mutex{},
+			NewsMap: make(map[string]cron.EntryID),
+
+			PillsMu: sync.Mutex{},
+			PillMap: make(map[string]cron.EntryID),
 		},
 	}
 
