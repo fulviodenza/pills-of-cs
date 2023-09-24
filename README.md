@@ -18,8 +18,8 @@ Commands available for this bot, for now are:
 - `/schedule_news [HH:MM] [Timezone]`: to schedule the receive of a set of news over various topics;
 - `/unschedule_news`: to unschedule your daily news
 - `/unschedule_pill`: to unschedule your daily pill
+- `/quiz`: to get a quiz to get preparated over a set of topics
 # Next features
 Features to be implemented in the next future:
-- [ ] `/quiz`: to get a quiz to get preparated over a set of topics
 - [ ] `/interview_tips`: to get some tips about interviews
 - [ ] `/podcast`: get latest episodes from podcasts about computer science
