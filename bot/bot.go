@@ -59,10 +59,6 @@ const (
 )
 
 type Bot struct {
-	*BotConf
-}
-
-type BotConf struct {
 	TelegramClient bt.Bot
 	NotionClient   notionapi.Client
 	NewsClient     *newsapi.Client
@@ -146,24 +142,22 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 	}
 
 	bot := &Bot{
-		&BotConf{
-			// client initialization
-			NotionClient:   *notion_client,
-			NewsClient:     newsClient,
-			TelegramClient: *b,
-			// static assets initialization
-			Categories:  categories,
-			HelpMessage: string(helpMessage),
-			// database initialization
-			UserRepo:  userRepo,
-			Schedules: map[string]time.Time{},
+		// client initialization
+		NotionClient:   *notion_client,
+		NewsClient:     newsClient,
+		TelegramClient: *b,
+		// static assets initialization
+		Categories:  categories,
+		HelpMessage: string(helpMessage),
+		// database initialization
+		UserRepo:  userRepo,
+		Schedules: map[string]time.Time{},
 
-			NewsMu:  sync.Mutex{},
-			NewsMap: make(map[string]cron.EntryID),
+		NewsMu:  sync.Mutex{},
+		NewsMap: make(map[string]cron.EntryID),
 
-			PillsMu: sync.Mutex{},
-			PillMap: make(map[string]cron.EntryID),
-		},
+		PillsMu: sync.Mutex{},
+		PillMap: make(map[string]cron.EntryID),
 	}
 
 	// setup the cron
@@ -225,13 +219,13 @@ func (b *Bot) recoverCrontabs(ctx context.Context, schedulerType string) error {
 		})
 		switch schedulerType {
 		case "news":
-			b.BotConf.NewsMu.Lock()
-			b.BotConf.NewsMap[uid] = cId
-			b.BotConf.NewsMu.Unlock()
+			b.NewsMu.Lock()
+			b.NewsMap[uid] = cId
+			b.NewsMu.Unlock()
 		case "pill":
-			b.BotConf.PillsMu.Lock()
-			b.BotConf.PillMap[uid] = cId
-			b.BotConf.PillsMu.Unlock()
+			b.PillsMu.Lock()
+			b.PillMap[uid] = cId
+			b.PillsMu.Unlock()
 		}
 	}
 

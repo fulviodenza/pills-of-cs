@@ -229,7 +229,7 @@ func (b *Bot) ScheduleNews(ctx context.Context, up *objects.Update) {
 func (b *Bot) UnscheduleNews(ctx context.Context, up *objects.Update) {
 	msg := ""
 	id := strconv.Itoa(up.Message.Chat.Id)
-	cronId, ok := b.BotConf.NewsMap[id]
+	cronId, ok := b.NewsMap[id]
 	if !ok {
 		log.Printf("[UnscheduleNews] id not found in newsMap: %v", id)
 		msg = "user not found in schedules"
@@ -246,7 +246,7 @@ func (b *Bot) UnscheduleNews(ctx context.Context, up *objects.Update) {
 func (b *Bot) UnschedulePill(ctx context.Context, up *objects.Update) {
 	msg := ""
 	id := strconv.Itoa(up.Message.Chat.Id)
-	cronId, ok := b.BotConf.PillMap[id]
+	cronId, ok := b.PillMap[id]
 	if !ok {
 		log.Printf("[UnschedulePill] id not found in pillsMap: %v", id)
 		msg = "user not found in schedules"
@@ -310,9 +310,9 @@ func (b *Bot) setCron(ctx context.Context, up *objects.Update, schedulerType str
 				log.Println("[SchedulePill]: got error:", err)
 				return
 			}
-			b.BotConf.PillsMu.Lock()
-			b.BotConf.PillMap[uid] = cronId
-			b.BotConf.PillsMu.Unlock()
+			b.PillsMu.Lock()
+			b.PillMap[uid] = cronId
+			b.PillsMu.Unlock()
 		case "news":
 			uid := strconv.Itoa(up.Message.Chat.Id)
 			cronId, err := b.NewsScheduler.AddFunc(crontab, func() {
@@ -322,9 +322,9 @@ func (b *Bot) setCron(ctx context.Context, up *objects.Update, schedulerType str
 				log.Println("[ScheduleNews]: got error:", err)
 				return
 			}
-			b.BotConf.NewsMu.Lock()
-			b.BotConf.NewsMap[uid] = cronId
-			b.BotConf.NewsMu.Unlock()
+			b.NewsMu.Lock()
+			b.NewsMap[uid] = cronId
+			b.NewsMu.Unlock()
 		}
 	}(ctx, up)
 
