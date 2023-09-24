@@ -16,6 +16,8 @@ Commands available for this bot, for now are:
 - `/schedule_pill [HH:MM] [Timezone]`: to schedule a pill at a give hour and minute of every day;
 - `/news`: to receive a set of news about your interested topics;
 - `/schedule_news [HH:MM] [Timezone]`: to schedule the receive of a set of news over various topics;
+- `/unschedule_news`: to unschedule your daily news
+- `/unschedule_pill`: to unschedule your daily pill
 # Next features
 Features to be implemented in the next future:
 - [ ] `/quiz`: to get a quiz to get preparated over a set of topics

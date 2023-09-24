@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/pills-of-cs/parser"
 	"github.com/pills-of-cs/utils"
@@ -17,6 +19,8 @@ import (
 	"github.com/jomei/notionapi"
 )
 
+const QUIZ_CATEGORY = "quiz"
+
 var _ IBot = (*Bot)(nil)
 
 type notionDbRow struct {
@@ -25,7 +29,7 @@ type notionDbRow struct {
 	Name notionapi.TitleProperty       `json:"Name"`
 }
 
-type IBot interface {
+type Commands interface {
 	Run(ctx context.Context, up *objects.Update)
 	Pill(ctx context.Context, up *objects.Update)
 	Help(ctx context.Context, up *objects.Update)
@@ -80,7 +84,7 @@ func (b *Bot) Help(ctx context.Context, up *objects.Update) {
 }
 
 func (b *Bot) Pill(ctx context.Context, up *objects.Update) {
-	msg := ""
+	var msg strings.Builder
 	subscribedTags, err := b.UserRepo.GetTagsByUserId(ctx, strconv.Itoa(up.Message.Chat.Id))
 	if err != nil {
 		log.Printf("[Pill]: failed getting tags: %v", err.Error())
@@ -88,6 +92,7 @@ func (b *Bot) Pill(ctx context.Context, up *objects.Update) {
 
 	choosenCategory := b.Categories[utils.MakeTimestamp(len(b.Categories))]
 	if len(subscribedTags) > 0 {
+		rand.Seed(time.Now().Unix())
 		choosenCategory = b.Categories[utils.MakeTimestamp(len(subscribedTags))]
 	}
 
@@ -114,16 +119,16 @@ func (b *Bot) Pill(ctx context.Context, up *objects.Update) {
 			log.Printf("[Pill]: failed unmarshaling pill: %v", err.Error())
 		}
 
-		msg = row.Name.Title[0].Text.Content + ": "
+		msg.WriteString(row.Name.Title[0].Text.Content + ": ")
 		for _, c := range row.Text.RichText {
-			msg += c.Text.Content
+			msg.WriteString(c.Text.Content)
 		}
-		b.sendMessage(msg, up, true)
+		b.sendMessage(msg.String(), up, true)
 	}
 }
 
 func (b *Bot) News(ctx context.Context, up *objects.Update) {
-	msg := ""
+	var msg strings.Builder
 	newsCategories := ""
 
 	categories, err := b.UserRepo.GetTagsByUserId(ctx, strconv.Itoa(up.Message.Chat.Id))
@@ -143,44 +148,43 @@ func (b *Bot) News(ctx context.Context, up *objects.Update) {
 				return sources.Articles[i].PublishedAt.Before(sources.Articles[i].PublishedAt)
 			})
 
-			for i := 0; i < 3; i++ {
-				msg += "- *" + sources.Articles[i].Title + "*\n"
-				msg += sources.Articles[i].Description + "\n"
-				msg += "from " + sources.Articles[i].URL + "\n"
+			for _, a := range sources.Articles {
+				msg.WriteString("- *" + a.Title + "*\n")
+				msg.WriteString(a.Description + "\n")
+				msg.WriteString("from " + a.URL + "\n")
 			}
 		} else {
-			log.Printf("err: %v", err)
-			log.Printf("articles len: %v", len(sources.Articles))
-			msg += "sources missing!"
+			log.Printf("err: %v; articles len: %v", err, len(sources.Articles))
+			msg.WriteString("sources missing!")
 		}
 	}
 
-	b.sendMessage(msg, up, true)
+	b.sendMessage(msg.String(), up, true)
 }
 
 func (b *Bot) GetTags(ctx context.Context, up *objects.Update) {
-	var msg = ""
+	var msg strings.Builder
 	for _, v := range b.Categories {
-		msg += fmt.Sprintf("- %s\n", v)
+		msg.WriteString(fmt.Sprintf("- %s\n", v))
 	}
 	if len(b.Categories) == 0 {
-		msg = "empty categories"
+		msg.WriteString("empty categories")
 	}
-	b.sendMessage(msg, up, false)
+	b.sendMessage(msg.String(), up, false)
 }
 
 func (b *Bot) GetSubscribedTags(ctx context.Context, up *objects.Update) {
-	msg := ""
+	var msg strings.Builder
 	tags, err := b.UserRepo.GetTagsByUserId(ctx, strconv.Itoa(up.Message.Chat.Id))
 	if err != nil {
 		log.Printf("[getSubscribedTags]: failed getting tags by user id: %v", err.Error())
 	}
-	msg += utils.AggregateTags(tags)
+	msg.WriteString(utils.AggregateTags(tags))
 	if len(tags) == 0 {
-		msg += "You are not subscribed to any tag!\nSubscribe one with /choose_tags [tag] command!"
+		msg.WriteString("You are not subscribed to any tag!\nSubscribe one with /choose_tags [tag] command!")
 	}
 
-	b.sendMessage(msg, up, false)
+	b.sendMessage(msg.String(), up, false)
 }
 
 func (b *Bot) ChooseTags(ctx context.Context, up *objects.Update) {
@@ -203,16 +207,16 @@ func (b *Bot) ChooseTags(ctx context.Context, up *objects.Update) {
 		log.Printf("[ChooseTags]: failed adding tag to user: %v", err.Error())
 	}
 
-	log.Printf("[ChooseTags]: return operation exit")
 	b.sendMessage("tags updated", up, false)
 }
 
 func (b *Bot) SchedulePill(ctx context.Context, up *objects.Update) {
 	msg, err := b.setCron(ctx, up, "pill")
 	if err != nil {
+		b.sendMessage("failed validating the inserted time, try using the format `/schedule_pill HH:MM Timezone`", up, true)
 		log.Printf("[SchedulePill] got error: %v", err)
 	}
-	b.sendMessage(msg, up, true)
+	b.sendMessage(msg.String(), up, true)
 }
 
 func (b *Bot) ScheduleNews(ctx context.Context, up *objects.Update) {
@@ -220,20 +224,114 @@ func (b *Bot) ScheduleNews(ctx context.Context, up *objects.Update) {
 	if err != nil {
 		log.Printf("[ScheduleNews] got error: %v", err)
 	}
-	b.sendMessage(msg, up, true)
+	b.sendMessage(msg.String(), up, true)
 }
 
-func (b *Bot) setCron(ctx context.Context, up *objects.Update, schedulerType string) (crontab string, err error) {
-	var msg string
+func (b *Bot) UnscheduleNews(ctx context.Context, up *objects.Update) {
+	id := strconv.Itoa(up.Message.Chat.Id)
+	cronId, ok := b.NewsMap[id]
+	if !ok {
+		log.Printf("[UnscheduleNews] id not found in newsMap: %v", id)
+		b.sendMessage("user not found in schedules", up, false)
+	} else {
+		b.NewsScheduler.Remove(cronId)
+		b.NewsMu.Lock()
+		delete(b.NewsMap, id)
+		b.NewsMu.Unlock()
+		err := b.UserRepo.RemoveNewsSchedule(ctx, id)
+		if err != nil {
+			log.Printf("[UnscheduleNews] error from db: %v", err)
+			b.sendMessage("user not found in db", up, false)
+		}
+		b.sendMessage("news unscheduled", up, false)
+	}
+}
+
+func (b *Bot) UnschedulePill(ctx context.Context, up *objects.Update) {
+	id := strconv.Itoa(up.Message.Chat.Id)
+	cronId, ok := b.PillMap[id]
+	if !ok {
+		log.Printf("[UnschedulePill] id not found in pillMap: %v", id)
+		b.sendMessage("user not found in schedules", up, false)
+	} else {
+		b.PillScheduler.Remove(cronId)
+		b.PillsMu.Lock()
+		delete(b.PillMap, id)
+		b.PillsMu.Unlock()
+		err := b.UserRepo.RemovePillSchedule(ctx, id)
+		if err != nil {
+			log.Printf("[UnschedulePill] error from db: %v", err)
+			b.sendMessage("user not found in db", up, false)
+		} else {
+			b.sendMessage("pill unscheduled", up, false)
+		}
+	}
+}
+
+func (b *Bot) Quiz(ctx context.Context, up *objects.Update) {
+	var optionsAnswer, options = []string{}, []string{}
+	question, optionsRaw := "", ""
+	correctIndex := -1
+
+	rawPoll, err := b.NotionClient.Database.Query(ctx, notionapi.DatabaseID(notionDatabaseId), &notionapi.DatabaseQueryRequest{
+		Filter: notionapi.PropertyFilter{
+			Property: "Tags",
+			MultiSelect: &notionapi.MultiSelectFilterCondition{
+				Contains: QUIZ_CATEGORY,
+			},
+		},
+	})
+	if err != nil {
+		log.Printf("[Pill]: failed retrieving pill: %v", err.Error())
+	}
+	if rawPoll != nil {
+		row := notionDbRow{}
+		rowProps := make([]byte, 0)
+
+		if rowProps, err = json.Marshal(rawPoll.Results[utils.MakeTimestamp(len(rawPoll.Results))].Properties); err != nil {
+			log.Printf("[Pill]: failed marshaling pill: %v", err.Error())
+		}
+		if err = json.Unmarshal(rowProps, &row); err != nil {
+			log.Printf("[Pill]: failed unmarshaling pill: %v", err.Error())
+		}
+		question = row.Name.Title[0].Text.Content
+		for _, c := range row.Text.RichText {
+			optionsRaw += c.Text.Content
+		}
+		optionsAnswer = strings.Split(optionsRaw, ";")
+		options = strings.Split(optionsAnswer[0], ",")
+		for i, o := range options {
+			if o == optionsAnswer[1] {
+				correctIndex = i
+				break
+			}
+		}
+	}
+	poll, err := b.TelegramClient.CreatePoll(up.Message.Chat.Id, question, QUIZ_CATEGORY)
+	if err != nil {
+		log.Printf("[Quiz] error creating poll: %v", err)
+	}
+	for _, o := range options {
+		poll.AddOption(o)
+	}
+	poll.SetCorrectOption(correctIndex)
+	poll.Send(false, false, up.Message.MessageId)
+}
+func (b *Bot) setCron(ctx context.Context, up *objects.Update, schedulerType string) (strings.Builder, error) {
+	var (
+		crontab string
+		err     error
+		msg     strings.Builder
+	)
 	id := strconv.Itoa(up.Message.Chat.Id)
 	// args[1] contains the time HH:MM, args[2] contains the timezone
 	args := strings.SplitN(up.Message.Text, " ", -1)
 	if len(args) != 3 {
-		msg = "Failed parsing provided time"
+		msg.WriteString("Failed parsing provided time")
 	} else {
 		crontab, err = parser.ValidateSchedule(args[1], args[2])
 		if err != nil {
-			msg = "Failed parsing provided time"
+			msg.WriteString("Failed parsing provided time")
 		}
 	}
 	switch schedulerType {
@@ -241,13 +339,13 @@ func (b *Bot) setCron(ctx context.Context, up *objects.Update, schedulerType str
 		err = b.UserRepo.SavePillSchedule(ctx, id, crontab)
 		if err != nil {
 			log.Printf("[SchedulePill]: failed saving time: %v", err.Error())
-			msg = "failed saving time"
+			msg.WriteString("failed saving time")
 		}
 	case "news":
 		err = b.UserRepo.SaveNewsSchedule(ctx, id, crontab)
 		if err != nil {
 			log.Printf("[SchedulePill]: failed saving time: %v", err.Error())
-			msg = "failed saving time"
+			msg.WriteString("failed saving time")
 		}
 
 	}
@@ -261,25 +359,33 @@ func (b *Bot) setCron(ctx context.Context, up *objects.Update, schedulerType str
 		}()
 		switch schedulerType {
 		case "pill":
-			_, err = b.PillScheduler.AddFunc(crontab, func() {
+			uid := strconv.Itoa(up.Message.Chat.Id)
+			cronId, err := b.PillScheduler.AddFunc(crontab, func() {
 				b.Pill(ctx, u)
 			})
 			if err != nil {
 				log.Println("[SchedulePill]: got error:", err)
 				return
 			}
+			b.PillsMu.Lock()
+			b.PillMap[uid] = cronId
+			b.PillsMu.Unlock()
 		case "news":
-			_, err = b.NewsScheduler.AddFunc(crontab, func() {
+			uid := strconv.Itoa(up.Message.Chat.Id)
+			cronId, err := b.NewsScheduler.AddFunc(crontab, func() {
 				b.News(ctx, u)
 			})
 			if err != nil {
 				log.Println("[ScheduleNews]: got error:", err)
 				return
 			}
+			b.NewsMu.Lock()
+			b.NewsMap[uid] = cronId
+			b.NewsMu.Unlock()
 		}
 	}(ctx, up)
 
-	// the human readable format is with times[0] (hours] first
-	msg = fmt.Sprintf("Crontab for your pill `%s`", crontab)
+	// the human readable format is with times[0] (hours) first
+	msg.WriteString(fmt.Sprintf("Crontab for your pill `%s`", crontab))
 	return msg, nil
 }

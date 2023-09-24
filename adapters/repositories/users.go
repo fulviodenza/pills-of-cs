@@ -51,6 +51,22 @@ func (ur *UserRepo) AddTagsToUser(ctx context.Context, id string, topics []strin
 	return nil
 }
 
+func (ur *UserRepo) RemovePillSchedule(ctx context.Context, id string) error {
+	err := ur.User.Update().SetPillSchedule("").Where(user.IDEQ(id)).Exec(ctx)
+	if err != nil {
+		log.Printf("[RemovePillSchedule]: error executing the query: %v", err)
+	}
+	return err
+}
+
+func (ur *UserRepo) RemoveNewsSchedule(ctx context.Context, id string) error {
+	err := ur.User.Update().SetNewsSchedule("").Where(user.IDEQ(id)).Exec(ctx)
+	if err != nil {
+		log.Printf("[RemoveNewsSchedule]: error executing the query: %v", err)
+	}
+	return err
+}
+
 func (ur *UserRepo) SavePillSchedule(ctx context.Context, id string, pill_schedule string) error {
 	_, err := ur.User.Query().
 		Where(user.IDEQ(id)).

@@ -8,11 +8,11 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/pills-of-cs/adapters/ent"
 	repositories "github.com/pills-of-cs/adapters/repositories"
-	"github.com/pills-of-cs/entities"
 	"github.com/pills-of-cs/parser"
 
 	bt "github.com/SakoDroid/telego"
@@ -48,6 +48,9 @@ const (
 	COMMAND_GET_TAGS                  = "/get_tags"
 	COMMAND_NEWS                      = "/news"
 	COMMAND_SCHEDULE_NEWS             = "/schedule_news"
+	COMMAND_UNSCHEDULE_NEWS           = "/unschedule_news"
+	COMMAND_UNSCHEDULE_PILL           = "/unschedule_pill"
+	COMMAND_QUIZ                      = "/quiz"
 )
 
 const (
@@ -57,12 +60,32 @@ const (
 )
 
 type Bot struct {
-	*entities.BotConf
+	TelegramClient bt.Bot
+	NotionClient   notionapi.Client
+	NewsClient     *newsapi.Client
+
+	HelpMessage string
+	Categories  []string
+
+	UserRepo  repositories.UserRepo
+	Schedules map[string]time.Time
+
+	PillScheduler *cron.Cron
+	PillsMu       sync.Mutex
+	PillMap       map[string]cron.EntryID
+
+	NewsScheduler *cron.Cron
+	NewsMu        sync.Mutex
+	NewsMap       map[string]cron.EntryID
+}
+
+type IBot interface {
+	Start(ctx context.Context)
 }
 
 // this cast force us to follow the given interface
 // if the interface will not be followed, this will not compile
-var _ entities.IBot = (*Bot)(nil)
+var _ IBot = (*Bot)(nil)
 
 // get variables from env
 var (
@@ -120,18 +143,22 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 	}
 
 	bot := &Bot{
-		&entities.BotConf{
-			// client initialization
-			NotionClient:   *notion_client,
-			NewsClient:     newsClient,
-			TelegramClient: *b,
-			// static assets initialization
-			Categories:  categories,
-			HelpMessage: string(helpMessage),
-			// database initialization
-			UserRepo:  userRepo,
-			Schedules: map[string]time.Time{},
-		},
+		// client initialization
+		NotionClient:   *notion_client,
+		NewsClient:     newsClient,
+		TelegramClient: *b,
+		// static assets initialization
+		Categories:  categories,
+		HelpMessage: string(helpMessage),
+		// database initialization
+		UserRepo:  userRepo,
+		Schedules: map[string]time.Time{},
+
+		NewsMu:  sync.Mutex{},
+		NewsMap: make(map[string]cron.EntryID),
+
+		PillsMu: sync.Mutex{},
+		PillMap: make(map[string]cron.EntryID),
 	}
 
 	// setup the cron
@@ -171,7 +198,7 @@ func (b *Bot) recoverCrontabs(ctx context.Context, schedulerType string) error {
 		if err != nil {
 			continue
 		}
-		s.AddFunc(cron, func() {
+		cId, err := s.AddFunc(cron, func() {
 			switch schedulerType {
 			case "news":
 				b.News(context.Background(), &objs.Update{
@@ -191,6 +218,16 @@ func (b *Bot) recoverCrontabs(ctx context.Context, schedulerType string) error {
 				})
 			}
 		})
+		switch schedulerType {
+		case "news":
+			b.NewsMu.Lock()
+			b.NewsMap[uid] = cId
+			b.NewsMu.Unlock()
+		case "pill":
+			b.PillsMu.Lock()
+			b.PillMap[uid] = cId
+			b.PillsMu.Unlock()
+		}
 	}
 
 	s.Start()
@@ -223,6 +260,9 @@ func (b *Bot) Start(ctx context.Context) {
 		COMMAND_SCHEDULE_PILL:             b.SchedulePill,
 		COMMAND_NEWS:                      b.News,
 		COMMAND_SCHEDULE_NEWS:             b.ScheduleNews,
+		COMMAND_UNSCHEDULE_NEWS:           b.UnscheduleNews,
+		COMMAND_UNSCHEDULE_PILL:           b.UnschedulePill,
+		COMMAND_QUIZ:                      b.Quiz,
 	}
 	for c, f := range handlers {
 		c := c
