@@ -56,6 +56,7 @@ func (b *Bot) sendMessage(msg string, up *objects.Update, formatMarkdown bool) {
 			if err != nil {
 				log.Printf("[SendMessage]: sending message to user: %v", err.Error())
 			}
+			break
 		}
 	} else {
 		_, err := b.TelegramClient.SendMessage(up.Message.Chat.Id, msg, parseMode, 0, false, false)
