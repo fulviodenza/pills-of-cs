@@ -21,7 +21,7 @@ import (
 
 const QUIZ_CATEGORY = "quiz"
 
-var _ IBot = (*Bot)(nil)
+var _ Commands = (*Bot)(nil)
 
 type notionDbRow struct {
 	Tags notionapi.MultiSelectProperty `json:"Tags"`
@@ -31,13 +31,16 @@ type notionDbRow struct {
 
 type Commands interface {
 	Run(ctx context.Context, up *objects.Update)
-	Pill(ctx context.Context, up *objects.Update)
 	Help(ctx context.Context, up *objects.Update)
 	ChooseTags(ctx context.Context, up *objects.Update)
 	GetTags(ctx context.Context, up *objects.Update)
+	Pill(ctx context.Context, up *objects.Update)
 	SchedulePill(ctx context.Context, up *objects.Update)
+	UnschedulePill(ctx context.Context, up *objects.Update)
 	News(ctx context.Context, up *objects.Update)
 	ScheduleNews(ctx context.Context, up *objects.Update)
+	UnscheduleNews(ctx context.Context, up *objects.Update)
+	Quiz(ctx context.Context, up *objects.Update)
 }
 
 func (b *Bot) sendMessage(msg string, up *objects.Update, formatMarkdown bool) {
@@ -317,6 +320,7 @@ func (b *Bot) Quiz(ctx context.Context, up *objects.Update) {
 	poll.SetCorrectOption(correctIndex)
 	poll.Send(false, false, up.Message.MessageId)
 }
+
 func (b *Bot) setCron(ctx context.Context, up *objects.Update, schedulerType string) (strings.Builder, error) {
 	var (
 		crontab string
