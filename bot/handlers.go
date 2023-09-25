@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -148,9 +147,8 @@ func (b *Bot) News(ctx context.Context, up *objects.Update) {
 		sources, err := b.NewsClient.GetEverything(ctx, sourceParams)
 		if err == nil && len(sources.Articles) != 0 {
 			articles := sources.Articles
-			sort.Slice(articles, func(i, j int) bool {
-				return sources.Articles[i].PublishedAt.Before(sources.Articles[i].PublishedAt)
-			})
+			rand.Seed(time.Now().UnixNano())
+			rand.Shuffle(len(articles), func(i, j int) { articles[i], articles[j] = articles[j], articles[i] })
 
 			for _, a := range sources.Articles {
 				msg.WriteString("- *" + a.Title + "*\n")
