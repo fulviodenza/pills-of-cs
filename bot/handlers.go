@@ -161,7 +161,7 @@ func (b *Bot) News(ctx context.Context, up *objects.Update) {
 		}
 	}
 
-	b.sendMessage(msg.String(), up, true)
+	b.sendMessage(msg.String(), up, false)
 }
 
 func (b *Bot) GetTags(ctx context.Context, up *objects.Update) {
