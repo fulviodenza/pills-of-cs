@@ -18,7 +18,7 @@ import (
 	"github.com/jomei/notionapi"
 )
 
-const QUIZ_CATEGORY = "quiz"
+const QuizCategory = "quiz"
 
 var _ Commands = (*Bot)(nil)
 
@@ -271,7 +271,8 @@ func (b *Bot) UnschedulePill(ctx context.Context, up *objects.Update) {
 }
 
 func (b *Bot) Quiz(ctx context.Context, up *objects.Update) {
-	var optionsAnswer, options = []string{}, []string{}
+	var optionsAnswer []string
+	var options []string
 	question, optionsRaw := "", ""
 	correctIndex := -1
 
@@ -279,7 +280,7 @@ func (b *Bot) Quiz(ctx context.Context, up *objects.Update) {
 		Filter: notionapi.PropertyFilter{
 			Property: "Tags",
 			MultiSelect: &notionapi.MultiSelectFilterCondition{
-				Contains: QUIZ_CATEGORY,
+				Contains: QuizCategory,
 			},
 		},
 	})
@@ -309,7 +310,7 @@ func (b *Bot) Quiz(ctx context.Context, up *objects.Update) {
 			}
 		}
 	}
-	poll, err := b.TelegramClient.CreatePoll(up.Message.Chat.Id, question, QUIZ_CATEGORY)
+	poll, err := b.TelegramClient.CreatePoll(up.Message.Chat.Id, question, QuizCategory)
 	if err != nil {
 		log.Printf("[Quiz] error creating poll: %v", err)
 	}
