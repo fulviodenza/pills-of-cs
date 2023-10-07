@@ -146,11 +146,11 @@ func (b *Bot) News(ctx context.Context, up *objects.Update) {
 		}
 		sources, err := b.NewsClient.GetEverything(ctx, sourceParams)
 		if err == nil && len(sources.Articles) != 0 {
-			articles := sources.Articles
+			articles := sources.Articles[:10]
 			rand.Seed(time.Now().UnixNano())
-			rand.Shuffle(len(articles), func(i, j int) { articles[i], articles[j] = articles[j], articles[i] })
+			rand.Shuffle(len(articles), func(i, j int) { (articles)[i], (articles)[j] = (articles)[j], (articles)[i] })
 
-			for _, a := range sources.Articles {
+			for _, a := range articles {
 				msg.WriteString("- *" + a.Title + "*\n")
 				msg.WriteString(a.Description + "\n")
 				msg.WriteString("from " + a.URL + "\n")
