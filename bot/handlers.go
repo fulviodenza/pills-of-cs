@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -133,7 +134,6 @@ func (b *Bot) Pill(ctx context.Context, up *objects.Update) {
 func (b *Bot) News(ctx context.Context, up *objects.Update) {
 	var msg strings.Builder
 	newsCategories := ""
-
 	categories, err := b.UserRepo.GetTagsByUserId(ctx, strconv.Itoa(up.Message.Chat.Id))
 	if err != nil || len(categories) == 0 {
 		newsCategories += "technology"
@@ -145,22 +145,26 @@ func (b *Bot) News(ctx context.Context, up *objects.Update) {
 			Language: "en",
 		}
 		sources, err := b.NewsClient.GetEverything(ctx, sourceParams)
+		sort.Slice(sources.Articles, func(i, j int) bool {
+			return sources.Articles[i].PublishedAt.After(sources.Articles[j].PublishedAt)
+		})
 		if err == nil && len(sources.Articles) != 0 {
 			articles := sources.Articles[:10]
-			rand.Seed(time.Now().UnixNano())
-			rand.Shuffle(len(articles), func(i, j int) { (articles)[i], (articles)[j] = (articles)[j], (articles)[i] })
 
 			for _, a := range articles {
-				msg.WriteString("- *" + a.Title + "*\n")
-				msg.WriteString(a.Description + "\n")
-				msg.WriteString("from " + a.URL + "\n")
+				if len(msg.String()) < 4095 {
+					description := strings.Trim(a.Description, "\n")
+
+					msg.WriteString("🔴 " + a.Title + "\n" + description + "\n" + "from " + a.URL + "\n")
+				} else {
+					break
+				}
 			}
 		} else {
 			log.Printf("err: %v; articles len: %v", err, len(sources.Articles))
 			msg.WriteString("sources missing!")
 		}
 	}
-
 	b.sendMessage(msg.String(), up, false)
 }
 
