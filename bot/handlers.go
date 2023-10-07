@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -19,9 +18,9 @@ import (
 	"github.com/jomei/notionapi"
 )
 
-const QUIZ_CATEGORY = "quiz"
+const QuizCategory = "quiz"
 
-var _ IBot = (*Bot)(nil)
+var _ Commands = (*Bot)(nil)
 
 type notionDbRow struct {
 	Tags notionapi.MultiSelectProperty `json:"Tags"`
@@ -31,13 +30,16 @@ type notionDbRow struct {
 
 type Commands interface {
 	Run(ctx context.Context, up *objects.Update)
-	Pill(ctx context.Context, up *objects.Update)
 	Help(ctx context.Context, up *objects.Update)
 	ChooseTags(ctx context.Context, up *objects.Update)
 	GetTags(ctx context.Context, up *objects.Update)
+	Pill(ctx context.Context, up *objects.Update)
 	SchedulePill(ctx context.Context, up *objects.Update)
+	UnschedulePill(ctx context.Context, up *objects.Update)
 	News(ctx context.Context, up *objects.Update)
 	ScheduleNews(ctx context.Context, up *objects.Update)
+	UnscheduleNews(ctx context.Context, up *objects.Update)
+	Quiz(ctx context.Context, up *objects.Update)
 }
 
 func (b *Bot) sendMessage(msg string, up *objects.Update, formatMarkdown bool) {
@@ -53,6 +55,7 @@ func (b *Bot) sendMessage(msg string, up *objects.Update, formatMarkdown bool) {
 			if err != nil {
 				log.Printf("[SendMessage]: sending message to user: %v", err.Error())
 			}
+			break
 		}
 	} else {
 		_, err := b.TelegramClient.SendMessage(up.Message.Chat.Id, msg, parseMode, 0, false, false)
@@ -143,12 +146,11 @@ func (b *Bot) News(ctx context.Context, up *objects.Update) {
 		}
 		sources, err := b.NewsClient.GetEverything(ctx, sourceParams)
 		if err == nil && len(sources.Articles) != 0 {
-			articles := sources.Articles
-			sort.Slice(articles, func(i, j int) bool {
-				return sources.Articles[i].PublishedAt.Before(sources.Articles[i].PublishedAt)
-			})
+			articles := sources.Articles[:10]
+			rand.Seed(time.Now().UnixNano())
+			rand.Shuffle(len(articles), func(i, j int) { (articles)[i], (articles)[j] = (articles)[j], (articles)[i] })
 
-			for _, a := range sources.Articles {
+			for _, a := range articles {
 				msg.WriteString("- *" + a.Title + "*\n")
 				msg.WriteString(a.Description + "\n")
 				msg.WriteString("from " + a.URL + "\n")
@@ -269,7 +271,8 @@ func (b *Bot) UnschedulePill(ctx context.Context, up *objects.Update) {
 }
 
 func (b *Bot) Quiz(ctx context.Context, up *objects.Update) {
-	var optionsAnswer, options = []string{}, []string{}
+	var optionsAnswer []string
+	var options []string
 	question, optionsRaw := "", ""
 	correctIndex := -1
 
@@ -277,7 +280,7 @@ func (b *Bot) Quiz(ctx context.Context, up *objects.Update) {
 		Filter: notionapi.PropertyFilter{
 			Property: "Tags",
 			MultiSelect: &notionapi.MultiSelectFilterCondition{
-				Contains: QUIZ_CATEGORY,
+				Contains: QuizCategory,
 			},
 		},
 	})
@@ -307,7 +310,7 @@ func (b *Bot) Quiz(ctx context.Context, up *objects.Update) {
 			}
 		}
 	}
-	poll, err := b.TelegramClient.CreatePoll(up.Message.Chat.Id, question, QUIZ_CATEGORY)
+	poll, err := b.TelegramClient.CreatePoll(up.Message.Chat.Id, question, QuizCategory)
 	if err != nil {
 		log.Printf("[Quiz] error creating poll: %v", err)
 	}
@@ -317,6 +320,7 @@ func (b *Bot) Quiz(ctx context.Context, up *objects.Update) {
 	poll.SetCorrectOption(correctIndex)
 	poll.Send(false, false, up.Message.MessageId)
 }
+
 func (b *Bot) setCron(ctx context.Context, up *objects.Update, schedulerType string) (strings.Builder, error) {
 	var (
 		crontab string

@@ -2,6 +2,7 @@ package adapters
 
 import (
 	"context"
+	"errors"
 	"log"
 
 	"github.com/pills-of-cs/adapters/ent"
@@ -17,7 +18,8 @@ func (ur *UserRepo) AddTagsToUser(ctx context.Context, id string, topics []strin
 	userEl, err := ur.User.Query().
 		Where(user.IDEQ(id)).
 		First(ctx)
-	if _, ok := err.(*ent.NotFoundError); ok {
+	var notFoundError *ent.NotFoundError
+	if errors.As(err, &notFoundError) {
 		err = ur.User.Create().
 			SetID(id).
 			SetCategories(topics).
@@ -30,7 +32,8 @@ func (ur *UserRepo) AddTagsToUser(ctx context.Context, id string, topics []strin
 		}
 	}
 	if err != nil {
-		if _, ok := err.(*ent.NotFoundError); !ok {
+		var notFoundError *ent.NotFoundError
+		if !errors.As(err, &notFoundError) {
 			log.Printf("[ur.User.Create]: error executing the query: %v", err)
 			return err
 		}
@@ -67,7 +70,7 @@ func (ur *UserRepo) RemoveNewsSchedule(ctx context.Context, id string) error {
 	return err
 }
 
-func (ur *UserRepo) SavePillSchedule(ctx context.Context, id string, pill_schedule string) error {
+func (ur *UserRepo) SavePillSchedule(ctx context.Context, id string, pillSchedule string) error {
 	_, err := ur.User.Query().
 		Where(user.IDEQ(id)).
 		First(ctx)
@@ -75,7 +78,7 @@ func (ur *UserRepo) SavePillSchedule(ctx context.Context, id string, pill_schedu
 		err = ur.User.Create().
 			SetID(id).
 			SetCategories([]string{}).
-			SetPillSchedule(pill_schedule).
+			SetPillSchedule(pillSchedule).
 			SetNewsSchedule("").
 			Exec(ctx)
 		if err != nil {
@@ -90,7 +93,7 @@ func (ur *UserRepo) SavePillSchedule(ctx context.Context, id string, pill_schedu
 		}
 	}
 
-	err = ur.User.Update().SetPillSchedule(pill_schedule).Where(user.IDEQ(id)).Exec(ctx)
+	err = ur.User.Update().SetPillSchedule(pillSchedule).Where(user.IDEQ(id)).Exec(ctx)
 	if err != nil {
 		log.Printf("[ur.User.Update]: error executing the query: %v", err)
 		return err
@@ -110,16 +113,16 @@ func (ur *UserRepo) GetTagsByUserId(ctx context.Context, id string) ([]string, e
 		return nil, nil
 	}
 
-	user, err := ur.Client.User.Query().
+	first, err := ur.Client.User.Query().
 		Where(user.IDEQ(id)).First(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return user.Categories, err
+	return first.Categories, err
 }
 
-func (ur UserRepo) GetAllPillCrontabs(ctx context.Context) (map[string]string, error) {
+func (ur *UserRepo) GetAllPillCrontabs(ctx context.Context) (map[string]string, error) {
 	users, err := ur.Client.User.Query().All(ctx)
 	if err != nil {
 		return nil, err
@@ -132,7 +135,7 @@ func (ur UserRepo) GetAllPillCrontabs(ctx context.Context) (map[string]string, e
 	return crontabs, nil
 }
 
-func (ur UserRepo) GetAllNewsCrontabs(ctx context.Context) (map[string]string, error) {
+func (ur *UserRepo) GetAllNewsCrontabs(ctx context.Context) (map[string]string, error) {
 	users, err := ur.Client.User.Query().All(ctx)
 	if err != nil {
 		return nil, err
