@@ -15,13 +15,10 @@ func main() {
 	var err error
 	ctx := context.Background()
 
-	botWithConfig, client, err := bot.NewBotWithConfig()
+	botWithConfig, err := bot.NewBotWithConfig()
 	if err != nil {
 		log.Fatalf("got error: %v", err)
 	}
-
-	// Create the db and the collection
-	botWithConfig.UserRepo.Client = client
 
 	err = botWithConfig.TelegramClient.Run()
 	if err != nil {

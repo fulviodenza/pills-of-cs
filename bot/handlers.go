@@ -21,26 +21,10 @@ import (
 
 const QuizCategory = "quiz"
 
-var _ Commands = (*Bot)(nil)
-
 type notionDbRow struct {
 	Tags notionapi.MultiSelectProperty `json:"Tags"`
 	Text notionapi.RichTextProperty    `json:"Text"`
 	Name notionapi.TitleProperty       `json:"Name"`
-}
-
-type Commands interface {
-	Run(ctx context.Context, up *objects.Update)
-	Help(ctx context.Context, up *objects.Update)
-	ChooseTags(ctx context.Context, up *objects.Update)
-	GetTags(ctx context.Context, up *objects.Update)
-	Pill(ctx context.Context, up *objects.Update)
-	SchedulePill(ctx context.Context, up *objects.Update)
-	UnschedulePill(ctx context.Context, up *objects.Update)
-	News(ctx context.Context, up *objects.Update)
-	ScheduleNews(ctx context.Context, up *objects.Update)
-	UnscheduleNews(ctx context.Context, up *objects.Update)
-	Quiz(ctx context.Context, up *objects.Update)
 }
 
 func (b *Bot) sendMessage(msg string, up *objects.Update, formatMarkdown bool) {
@@ -50,7 +34,7 @@ func (b *Bot) sendMessage(msg string, up *objects.Update, formatMarkdown bool) {
 	}
 
 	if len(msg) >= 4096 {
-		msgs := splitString(msg)
+		msgs := parser.SplitString(msg)
 		for _, m := range msgs {
 			_, err := b.TelegramClient.SendMessage(up.Message.Chat.Id, m, parseMode, 0, false, false)
 			if err != nil {
@@ -66,25 +50,12 @@ func (b *Bot) sendMessage(msg string, up *objects.Update, formatMarkdown bool) {
 	}
 }
 
-func splitString(s string) []string {
-	if len(s) <= 0 {
-		return nil
-	}
-
-	maxGroupLen := 4095
-	if len(s) < maxGroupLen {
-		maxGroupLen = len(s)
-	}
-	group := s[:maxGroupLen]
-	return append([]string{group}, splitString(s[maxGroupLen:])...)
-}
-
 func (b *Bot) Run(ctx context.Context, up *objects.Update) {
 	b.sendMessage("Welcome to the pills-of-cs bot! Press `/pill` to request a pill or `/help` to get informations about the bot", up, true)
 }
 
 func (b *Bot) Help(ctx context.Context, up *objects.Update) {
-	b.sendMessage(string(b.HelpMessage), up, true)
+	b.sendMessageFunc(string(b.HelpMessage), up, true)
 }
 
 func (b *Bot) Pill(ctx context.Context, up *objects.Update) {
@@ -94,17 +65,17 @@ func (b *Bot) Pill(ctx context.Context, up *objects.Update) {
 		log.Printf("[Pill]: failed getting tags: %v", err.Error())
 	}
 
-	choosenCategory := b.Categories[utils.MakeTimestamp(len(b.Categories))]
+	chosenCategory := b.Categories[utils.MakeTimestamp(len(b.Categories))]
 	if len(subscribedTags) > 0 {
 		rand.Seed(time.Now().Unix())
-		choosenCategory = b.Categories[utils.MakeTimestamp(len(subscribedTags))]
+		chosenCategory = b.Categories[utils.MakeTimestamp(len(subscribedTags))]
 	}
 
 	res, err := b.NotionClient.Database.Query(ctx, notionapi.DatabaseID(notionDatabaseId), &notionapi.DatabaseQueryRequest{
 		Filter: notionapi.PropertyFilter{
 			Property: "Tags",
 			MultiSelect: &notionapi.MultiSelectFilterCondition{
-				Contains: choosenCategory,
+				Contains: chosenCategory,
 			},
 		},
 	})
@@ -127,7 +98,7 @@ func (b *Bot) Pill(ctx context.Context, up *objects.Update) {
 		for _, c := range row.Text.RichText {
 			msg.WriteString(c.Text.Content)
 		}
-		b.sendMessage(msg.String(), up, true)
+		b.sendMessageFunc(msg.String(), up, true)
 	}
 }
 
@@ -176,7 +147,7 @@ func (b *Bot) GetTags(ctx context.Context, up *objects.Update) {
 	if len(b.Categories) == 0 {
 		msg.WriteString("empty categories")
 	}
-	b.sendMessage(msg.String(), up, false)
+	b.sendMessageFunc(msg.String(), up, false)
 }
 
 func (b *Bot) GetSubscribedTags(ctx context.Context, up *objects.Update) {

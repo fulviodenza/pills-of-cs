@@ -49,3 +49,16 @@ func ParseCategories(filename string) ([]string, error) {
 	categories := strings.Split(string(dst), "\n")
 	return categories, nil
 }
+
+func SplitString(s string) []string {
+	if len(s) <= 0 {
+		return nil
+	}
+
+	maxGroupLen := 4095
+	if len(s) < maxGroupLen {
+		maxGroupLen = len(s)
+	}
+	group := s[:maxGroupLen]
+	return append([]string{group}, SplitString(s[maxGroupLen:])...)
+}

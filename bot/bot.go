@@ -3,6 +3,7 @@ package bot
 import (
 	"context"
 	"fmt"
+	"github.com/pills-of-cs/entities"
 	"log"
 	"net/http"
 	"os"
@@ -67,7 +68,7 @@ type Bot struct {
 	HelpMessage string
 	Categories  []string
 
-	UserRepo  repositories.UserRepo
+	UserRepo  entities.User
 	Schedules map[string]time.Time
 
 	PillScheduler *cron.Cron
@@ -77,15 +78,9 @@ type Bot struct {
 	NewsScheduler *cron.Cron
 	NewsMu        sync.Mutex
 	NewsMap       map[string]cron.EntryID
-}
 
-type IBot interface {
-	Start(ctx context.Context)
+	sendMessageFunc func(msg string, up *objects.Update, formatMarkdown bool)
 }
-
-// this cast force us to follow the given interface
-// if the interface will not be followed, this will not compile
-var _ IBot = (*Bot)(nil)
 
 // get variables from env
 var (
@@ -96,12 +91,12 @@ var (
 	databaseUrl      = os.Getenv(DATABASE_URL)
 )
 
-func NewBotWithConfig() (*Bot, *ent.Client, error) {
+func NewBotWithConfig() (*Bot, error) {
 	ctx := context.Background()
 
 	helpMessage := make([]byte, 0)
 	if err := parser.Read(HELP_MESSAGE_ASSET, &helpMessage); err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	// connect to database with the env db uri
@@ -111,7 +106,7 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 		log.Printf("[ent.SetupAndConnectDatabase]: error in db setup or connection: %v", err.Error())
 	}
 
-	bot_config := &cfg.BotConfigs{
+	botConfig := &cfg.BotConfigs{
 		BotAPI:         cfg.DefaultBotAPI,
 		APIKey:         telegramToken,
 		UpdateConfigs:  cfg.DefaultUpdateConfigs(),
@@ -119,23 +114,23 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 		LogFileAddress: cfg.DefaultLogFile,
 	}
 
-	b, err := bt.NewBot(bot_config)
+	b, err := bt.NewBot(botConfig)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	// end telegram configuration
 
-	notion_client := notionapi.NewClient(notionapi.Token(notionToken))
+	notionClient := notionapi.NewClient(notionapi.Token(notionToken))
 
 	// set news client
 	newsClient := newsapi.NewClient(newsToken, newsapi.WithHTTPClient(http.DefaultClient), newsapi.WithUserAgent("pills-of-cs"))
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	categories, err := parser.ParseCategories(CATEGORIES_ASSET)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	userRepo := repositories.UserRepo{
@@ -144,14 +139,14 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 
 	bot := &Bot{
 		// client initialization
-		NotionClient:   *notion_client,
+		NotionClient:   *notionClient,
 		NewsClient:     newsClient,
 		TelegramClient: *b,
 		// static assets initialization
 		Categories:  categories,
 		HelpMessage: string(helpMessage),
 		// database initialization
-		UserRepo:  userRepo,
+		UserRepo:  &userRepo,
 		Schedules: map[string]time.Time{},
 
 		NewsMu:  sync.Mutex{},
@@ -165,14 +160,14 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 	// recovery crons from database
 	err = bot.recoverCrontabs(ctx, "pill")
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	err = bot.recoverCrontabs(ctx, "news")
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	return bot, client, err
+	return bot, err
 }
 
 func (b *Bot) recoverCrontabs(ctx context.Context, schedulerType string) error {
@@ -193,12 +188,12 @@ func (b *Bot) recoverCrontabs(ctx context.Context, schedulerType string) error {
 		}
 	}
 
-	for uid, cron := range crontabs {
+	for uid, c := range crontabs {
 		userId, err := strconv.Atoi(uid)
 		if err != nil {
 			continue
 		}
-		cId, err := s.AddFunc(cron, func() {
+		cId, err := s.AddFunc(c, func() {
 			switch schedulerType {
 			case "news":
 				b.News(context.Background(), &objs.Update{

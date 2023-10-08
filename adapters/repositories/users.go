@@ -3,6 +3,7 @@ package adapters
 import (
 	"context"
 	"errors"
+	"github.com/pills-of-cs/entities"
 	"log"
 
 	"github.com/pills-of-cs/adapters/ent"
@@ -12,6 +13,8 @@ import (
 type UserRepo struct {
 	*ent.Client
 }
+
+var _ entities.User = (*UserRepo)(nil)
 
 func (ur *UserRepo) AddTagsToUser(ctx context.Context, id string, topics []string) error {
 
