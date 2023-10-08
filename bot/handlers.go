@@ -16,6 +16,7 @@ import (
 
 	"github.com/SakoDroid/telego/objects"
 	"github.com/barthr/newsapi"
+	"github.com/google/go-cmp/cmp"
 	"github.com/jomei/notionapi"
 )
 
@@ -84,21 +85,26 @@ func (b *Bot) Pill(ctx context.Context, up *objects.Update) {
 	}
 
 	if res != nil {
-		row := notionDbRow{}
+		var row *notionDbRow = &notionDbRow{}
 		rowProps := make([]byte, 0)
 
-		if rowProps, err = json.Marshal(res.Results[utils.MakeTimestamp(len(res.Results))].Properties); err != nil {
-			log.Printf("[Pill]: failed marshaling pill: %v", err.Error())
-		}
-		if err = json.Unmarshal(rowProps, &row); err != nil {
-			log.Printf("[Pill]: failed unmarshaling pill: %v", err.Error())
-		}
+		resultsLen := len(res.Results)
+		if resultsLen > 0 { // we will use resultsLen to be divided by 0
+			if rowProps, err = json.Marshal(res.Results[utils.MakeTimestamp(resultsLen)].Properties); err != nil {
+				log.Printf("[Pill]: failed marshaling pill: %v", err.Error())
+			}
+			if err = json.Unmarshal(rowProps, row); err != nil {
+				log.Printf("[Pill]: failed unmarshaling pill: %v", err.Error())
+			}
 
-		msg.WriteString(row.Name.Title[0].Text.Content + ": ")
-		for _, c := range row.Text.RichText {
-			msg.WriteString(c.Text.Content)
+			if diff := cmp.Diff(*row, notionDbRow{}); diff != "" { // the row is not empty
+				msg.WriteString(row.Name.Title[0].Text.Content + ": ")
+				for _, c := range row.Text.RichText {
+					msg.WriteString(c.Text.Content)
+				}
+			}
 		}
-		b.sendMessageFunc(msg.String(), up, true)
+		b.sendMessageFunc(msg.String(), up, false)
 	}
 }
 

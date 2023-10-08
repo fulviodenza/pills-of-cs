@@ -1,7 +1,12 @@
 package bot
 
 import (
+	"bytes"
 	"context"
+	"errors"
+	"log"
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/SakoDroid/telego/objects"
@@ -153,6 +158,25 @@ func TestBot_Pill(t *testing.T) {
 		},
 	}
 
+	queryValBadMarshaling := &notionapi.DatabaseQueryResponse{
+		Results: []notionapi.Page{
+			{
+				Properties: notionapi.Properties{
+					"example": notionapi.MultiSelectProperty{
+						ID:   "tag",
+						Type: notionapi.PropertyTypeText,
+					},
+					"bad":  notionapi.RichTextProperty{},
+					"name": notionapi.TitleProperty{},
+				},
+			},
+		},
+	}
+
+	queryValEmptyResults := &notionapi.DatabaseQueryResponse{
+		Results: []notionapi.Page{},
+	}
+
 	type UserRepoMock struct {
 		GetTagsByUserIdValue []string
 		GetTagsByUserIdError error
@@ -160,6 +184,7 @@ func TestBot_Pill(t *testing.T) {
 
 	type NotionClientMock struct {
 		QueryVal *notionapi.DatabaseQueryResponse
+		QueryErr error
 	}
 	type fields struct {
 		Categories   []string
@@ -175,6 +200,7 @@ func TestBot_Pill(t *testing.T) {
 		fields  fields
 		args    args
 		wantMsg string
+		wantErr error
 	}{
 		{
 			"send pill",
@@ -182,7 +208,6 @@ func TestBot_Pill(t *testing.T) {
 				Categories: []string{"Database"},
 				UserRepo: UserRepoMock{
 					GetTagsByUserIdValue: []string{"Database"},
-					GetTagsByUserIdError: nil,
 				},
 				NotionClient: NotionClientMock{
 					QueryVal: queryVal,
@@ -193,9 +218,86 @@ func TestBot_Pill(t *testing.T) {
 				up:  up,
 			},
 			"example title: example text",
+			nil,
+		},
+		{
+			"failed getting tags from database",
+			fields{
+				Categories: []string{"Database"},
+				UserRepo: UserRepoMock{
+					GetTagsByUserIdError: errors.New("database error"),
+				},
+				NotionClient: NotionClientMock{},
+			},
+			args{
+				ctx: ctx,
+				up:  up,
+			},
+			"",
+			errors.New("failed getting tags"),
+		},
+		{
+			"failed getting tags from notion database",
+			fields{
+				Categories: []string{"Database"},
+				UserRepo: UserRepoMock{
+					GetTagsByUserIdValue: []string{"Database"},
+				},
+				NotionClient: NotionClientMock{
+					QueryErr: errors.New("notion database error"),
+				},
+			},
+			args{
+				ctx: ctx,
+				up:  up,
+			},
+			"",
+			errors.New("failed retrieving pill"),
+		},
+		{
+			"empty results from notion database",
+			fields{
+				Categories: []string{"Database"},
+				UserRepo: UserRepoMock{
+					GetTagsByUserIdValue: []string{"Database"},
+				},
+				NotionClient: NotionClientMock{
+					QueryVal: queryValEmptyResults,
+				},
+			},
+			args{
+				ctx: ctx,
+				up:  up,
+			},
+			"",
+			nil,
+		},
+		{
+			"error marshaling results from notion database",
+			fields{
+				Categories: []string{"Database"},
+				UserRepo: UserRepoMock{
+					GetTagsByUserIdValue: []string{"Database"},
+				},
+				NotionClient: NotionClientMock{
+					QueryVal: queryValBadMarshaling,
+				},
+			},
+			args{
+				ctx: ctx,
+				up:  up,
+			},
+			"",
+			nil,
 		},
 	}
 	for _, tt := range tests {
+		var buf bytes.Buffer
+		log.SetOutput(&buf)
+		defer func() {
+			log.SetOutput(os.Stderr)
+		}()
+
 		t.Run(tt.name, func(t *testing.T) {
 			b := &Bot{
 				Categories: tt.fields.Categories,
@@ -206,6 +308,7 @@ func TestBot_Pill(t *testing.T) {
 				NotionClient: notionapi.Client{
 					Database: mocks.NotionDatabaseServiceMock{
 						QueryVal: tt.fields.NotionClient.QueryVal,
+						QueryErr: tt.fields.NotionClient.QueryErr,
 					},
 				},
 				sendMessageFunc: func(msg string, up *objects.Update, formatMarkdown bool) {
@@ -215,6 +318,14 @@ func TestBot_Pill(t *testing.T) {
 				},
 			}
 			b.Pill(tt.args.ctx, tt.args.up)
+			if buf.Len() != 0 {
+				if !strings.Contains(buf.String(), tt.wantErr.Error()) {
+					t.Errorf("unexpected error: %v:", buf.String())
+				}
+			}
+			if buf.Len() == 0 && tt.wantErr != nil {
+				t.Errorf("expected error: %v, got no error", tt.wantErr)
+			}
 		})
 	}
 }
