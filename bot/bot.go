@@ -218,7 +218,7 @@ func (b *Bot) recoverCrontabs(ctx context.Context, schedulerType string) error {
 			}
 		})
 		if err != nil {
-			return err
+			continue
 		}
 
 		switch schedulerType {
