@@ -17,7 +17,6 @@ import (
 
 	bt "github.com/SakoDroid/telego"
 	cfg "github.com/SakoDroid/telego/configs"
-	"github.com/SakoDroid/telego/objects"
 	objs "github.com/SakoDroid/telego/objects"
 	"github.com/barthr/newsapi"
 	"github.com/jomei/notionapi"
@@ -218,6 +217,10 @@ func (b *Bot) recoverCrontabs(ctx context.Context, schedulerType string) error {
 				})
 			}
 		})
+		if err != nil {
+			return err
+		}
+
 		switch schedulerType {
 		case "news":
 			b.NewsMu.Lock()
@@ -250,7 +253,7 @@ func (b *Bot) Start(ctx context.Context) {
 		}
 	}()
 
-	var handlers = map[string]func(ctx context.Context, up *objects.Update){
+	var handlers = map[string]func(ctx context.Context, up *objs.Update){
 		COMMAND_GET_TAGS:                  b.GetTags,
 		COMMAND_START:                     b.Run,
 		COMMAND_PILL:                      b.Pill,

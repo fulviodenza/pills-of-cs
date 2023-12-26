@@ -20,6 +20,7 @@ import (
 )
 
 const QuizCategory = "quiz"
+const MAX_LEN_MESSAGE = 4096
 
 var _ Commands = (*Bot)(nil)
 
@@ -49,14 +50,13 @@ func (b *Bot) sendMessage(msg string, up *objects.Update, formatMarkdown bool) {
 		parseMode = "Markdown"
 	}
 
-	if len(msg) >= 4096 {
+	if len(msg) >= MAX_LEN_MESSAGE {
 		msgs := splitString(msg)
 		for _, m := range msgs {
 			_, err := b.TelegramClient.SendMessage(up.Message.Chat.Id, m, parseMode, 0, false, false)
 			if err != nil {
 				log.Printf("[SendMessage]: sending message to user: %v", err.Error())
 			}
-			break
 		}
 	} else {
 		_, err := b.TelegramClient.SendMessage(up.Message.Chat.Id, msg, parseMode, 0, false, false)
@@ -71,7 +71,7 @@ func splitString(s string) []string {
 		return nil
 	}
 
-	maxGroupLen := 4095
+	maxGroupLen := MAX_LEN_MESSAGE - 1
 	if len(s) < maxGroupLen {
 		maxGroupLen = len(s)
 	}
@@ -96,7 +96,7 @@ func (b *Bot) Pill(ctx context.Context, up *objects.Update) {
 
 	choosenCategory := b.Categories[utils.MakeTimestamp(len(b.Categories))]
 	if len(subscribedTags) > 0 {
-		rand.Seed(time.Now().Unix())
+		rand.New(rand.NewSource(time.Now().UnixNano()))
 		choosenCategory = b.Categories[utils.MakeTimestamp(len(subscribedTags))]
 	}
 
@@ -114,7 +114,7 @@ func (b *Bot) Pill(ctx context.Context, up *objects.Update) {
 
 	if res != nil {
 		row := notionDbRow{}
-		rowProps := make([]byte, 0)
+		var rowProps []byte
 
 		if rowProps, err = json.Marshal(res.Results[utils.MakeTimestamp(len(res.Results))].Properties); err != nil {
 			log.Printf("[Pill]: failed marshaling pill: %v", err.Error())
@@ -150,9 +150,11 @@ func (b *Bot) News(ctx context.Context, up *objects.Update) {
 		})
 		if err == nil && len(sources.Articles) != 0 {
 			articles := sources.Articles[:10]
+			rand.New(rand.NewSource(time.Now().UnixNano()))
+			rand.Shuffle(len(articles), func(i, j int) { (articles)[i], (articles)[j] = (articles)[j], (articles)[i] })
 
 			for _, a := range articles {
-				if len(msg.String()) < 4095 {
+				if len(msg.String()) < MAX_LEN_MESSAGE-1 {
 					description := strings.Trim(a.Description, "\n")
 
 					msg.WriteString("🔴 " + a.Title + "\n" + description + "\n" + "from " + a.URL + "\n")
@@ -293,7 +295,7 @@ func (b *Bot) Quiz(ctx context.Context, up *objects.Update) {
 	}
 	if rawPoll != nil {
 		row := notionDbRow{}
-		rowProps := make([]byte, 0)
+		var rowProps []byte
 
 		if rowProps, err = json.Marshal(rawPoll.Results[utils.MakeTimestamp(len(rawPoll.Results))].Properties); err != nil {
 			log.Printf("[Pill]: failed marshaling pill: %v", err.Error())
