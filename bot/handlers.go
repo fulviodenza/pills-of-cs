@@ -14,7 +14,7 @@ import (
 	"github.com/pills-of-cs/parser"
 	"github.com/pills-of-cs/utils"
 
-	"github.com/SakoDroid/telego/v2/objects"
+	"github.com/SakoDroid/telego/objects"
 	"github.com/barthr/newsapi"
 	"github.com/jomei/notionapi"
 )
