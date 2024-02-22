@@ -3,7 +3,7 @@ module github.com/pills-of-cs
 go 1.19
 
 require (
-	github.com/SakoDroid/telego v1.8.0
+	github.com/SakoDroid/telego/v2 v2.1.0
 	github.com/jomei/notionapi v1.9.3
 )
 
