@@ -15,9 +15,9 @@ import (
 	repositories "github.com/pills-of-cs/adapters/repositories"
 	"github.com/pills-of-cs/parser"
 
-	bt "github.com/SakoDroid/telego"
-	cfg "github.com/SakoDroid/telego/configs"
-	objs "github.com/SakoDroid/telego/objects"
+	bt "github.com/SakoDroid/telego/v2"
+	cfg "github.com/SakoDroid/telego/v2/configs"
+	objs "github.com/SakoDroid/telego/v2/objects"
 	"github.com/barthr/newsapi"
 	"github.com/jomei/notionapi"
 	"github.com/robfig/cron/v3"
