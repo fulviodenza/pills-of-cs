@@ -51,7 +51,7 @@ func (cc *ChooseTagsCommand) Execute(ctx context.Context, update *objects.Update
 	validatedArgs := make([]string, 0)
 	for _, a := range args {
 		if contains(a, cc.Bot.GetCategories()) && !contains(a, tags) {
-			validatedArgs = append(validatedArgs, a)
+			validatedArgs = append(validatedArgs, strings.ToLower(a))
 		}
 	}
 

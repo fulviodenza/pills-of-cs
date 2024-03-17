@@ -13,6 +13,7 @@ var _ IUserRepo = (*UserRepo)(nil)
 
 type IUserRepo interface {
 	AddTagsToUser(ctx context.Context, id string, topics []string) error
+	RemoveTagsFromUser(ctx context.Context, id string, topics []string) ([]string, error)
 	RemovePillSchedule(ctx context.Context, id string) error
 	RemoveNewsSchedule(ctx context.Context, id string) error
 	SavePillSchedule(ctx context.Context, id string, pillSchedule string) error
@@ -68,6 +69,41 @@ func (ur *UserRepo) AddTagsToUser(ctx context.Context, id string, topics []strin
 	}
 
 	return nil
+}
+
+func (ur *UserRepo) RemoveTagsFromUser(ctx context.Context, id string, topics []string) ([]string, error) {
+	userEl, err := ur.User.Query().
+		Where(user.IDEQ(id)).
+		First(ctx)
+	if err != nil {
+		log.Printf("[ur.User.Create]: error executing the query: %v", err)
+		return nil, err
+	}
+
+	for _, t := range topics {
+		userEl.Categories = removeFromSlice(userEl.Categories, t)
+	}
+
+	if userEl.Categories != nil {
+		err = ur.User.Update().SetCategories(userEl.Categories).Where(user.IDEQ(userEl.ID)).Exec(ctx)
+
+		if err != nil {
+			log.Printf("[ur.User.Update]: error executing the query: %v", err)
+			return nil, err
+		}
+	}
+
+	return userEl.Categories, nil
+}
+
+func removeFromSlice(s []string, strToRemove string) []string {
+	var result []string
+	for _, str := range s {
+		if str != strToRemove {
+			result = append(result, str)
+		}
+	}
+	return result
 }
 
 func (ur *UserRepo) RemovePillSchedule(ctx context.Context, id string) error {

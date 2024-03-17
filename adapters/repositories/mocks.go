@@ -26,6 +26,10 @@ func (ur *mockUserRepo) AddTagsToUser(ctx context.Context, id string, topics []s
 	return nil
 }
 
+func (ur *mockUserRepo) RemoveTagsFromUser(ctx context.Context, id string, topics []string) ([]string, error) {
+	return nil, nil
+}
+
 func (*mockUserRepo) RemovePillSchedule(ctx context.Context, id string) error { return nil }
 func (*mockUserRepo) RemoveNewsSchedule(ctx context.Context, id string) error { return nil }
 func (*mockUserRepo) SavePillSchedule(ctx context.Context, id string, pillSchedule string) error {
