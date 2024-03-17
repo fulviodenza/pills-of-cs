@@ -11,6 +11,8 @@ import (
 
 var _ types.ICommand = (*UnschedulePillCommand)(nil)
 
+const PILL_UNSCHEDULED = "pill unscheduled"
+
 type UnschedulePillCommand struct {
 	Bot *Bot
 }
@@ -27,7 +29,7 @@ func (uc *UnschedulePillCommand) Execute(ctx context.Context, update *objects.Up
 	cronId, ok := uc.Bot.PillMap[id]
 	if !ok {
 		log.Printf("[UnschedulePill] id not found in pillMap: %v", id)
-		uc.Bot.SendMessage("user not found in schedules", update, false)
+		uc.Bot.SendMessage(USER_NOT_FOUND_SCHEDULES, update, false)
 	} else {
 		uc.Bot.PillScheduler.Remove(cronId)
 		uc.Bot.PillsMu.Lock()
@@ -36,9 +38,9 @@ func (uc *UnschedulePillCommand) Execute(ctx context.Context, update *objects.Up
 		err := uc.Bot.UserRepo.RemovePillSchedule(ctx, id)
 		if err != nil {
 			log.Printf("[UnschedulePill] error from db: %v", err)
-			uc.Bot.SendMessage("user not found in db", update, false)
+			uc.Bot.SendMessage(USER_NOT_FOUND_DB, update, false)
 		} else {
-			uc.Bot.SendMessage("pill unscheduled", update, false)
+			uc.Bot.SendMessage(PILL_UNSCHEDULED, update, false)
 		}
 	}
 }

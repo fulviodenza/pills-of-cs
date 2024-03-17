@@ -11,6 +11,12 @@ import (
 
 var _ types.ICommand = (*UnscheduleNewsCommand)(nil)
 
+const (
+	USER_NOT_FOUND_SCHEDULES = "user not found in schedules"
+	USER_NOT_FOUND_DB        = "user not found in db"
+	NEWS_UNSCHEDULED         = "news unscheduled"
+)
+
 type UnscheduleNewsCommand struct {
 	Bot *Bot
 }
@@ -27,7 +33,7 @@ func (uc *UnscheduleNewsCommand) Execute(ctx context.Context, update *objects.Up
 	cronId, ok := uc.Bot.NewsMap[id]
 	if !ok {
 		log.Printf("[UnscheduleNews] id not found in newsMap: %v", id)
-		uc.Bot.SendMessage("user not found in schedules", update, false)
+		uc.Bot.SendMessage(USER_NOT_FOUND_SCHEDULES, update, false)
 	} else {
 		uc.Bot.NewsScheduler.Remove(cronId)
 		uc.Bot.NewsMu.Lock()
@@ -36,8 +42,8 @@ func (uc *UnscheduleNewsCommand) Execute(ctx context.Context, update *objects.Up
 		err := uc.Bot.UserRepo.RemoveNewsSchedule(ctx, id)
 		if err != nil {
 			log.Printf("[UnscheduleNews] error from db: %v", err)
-			uc.Bot.SendMessage("user not found in db", update, false)
+			uc.Bot.SendMessage(USER_NOT_FOUND_DB, update, false)
 		}
-		uc.Bot.SendMessage("news unscheduled", update, false)
+		uc.Bot.SendMessage(NEWS_UNSCHEDULED, update, false)
 	}
 }
