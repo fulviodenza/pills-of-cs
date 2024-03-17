@@ -22,7 +22,7 @@ type PillCommand struct {
 }
 
 func NewPillCommand(bot *Bot) types.Command {
-	hc := HelpCommand{
+	hc := PillCommand{
 		Bot: bot,
 	}
 	return hc.Execute
