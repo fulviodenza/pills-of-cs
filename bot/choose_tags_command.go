@@ -23,7 +23,6 @@ func NewChooseTagsCommand(bot *Bot) types.Command {
 	return hc.Execute
 }
 
-// Execute method to process the help command.
 func (cc *ChooseTagsCommand) Execute(ctx context.Context, update *objects.Update) {
 	// /cmd args[0] args[1]
 	args := strings.Split(update.Message.Text, " ")

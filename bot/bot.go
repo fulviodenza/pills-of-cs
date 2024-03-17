@@ -96,12 +96,6 @@ var (
 func NewBotWithConfig() (*Bot, *ent.Client, error) {
 	ctx := context.Background()
 
-	client, err := ent.SetupAndConnectDatabase(databaseUrl)
-	fmt.Println(client)
-	if err != nil {
-		log.Printf("[ent.SetupAndConnectDatabase]: error in db setup or connection: %v", err.Error())
-	}
-
 	bot_config := &cfg.BotConfigs{
 		BotAPI:         cfg.DefaultBotAPI,
 		APIKey:         telegramToken,
@@ -110,26 +104,14 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 		LogFileAddress: cfg.DefaultLogFile,
 	}
 
-	b, err := bt.NewBot(bot_config)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	notionClient := notionapi.NewClient(notionapi.Token(notionToken))
 
 	newsClient := newsapi.NewClient(newsToken, newsapi.WithHTTPClient(http.DefaultClient), newsapi.WithUserAgent("pills-of-cs"))
 
-	categories, err := parser.ParseCategories(CATEGORIES_ASSET)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	bot := &Bot{
-		NotionClient:   *notionClient,
-		NewsClient:     newsClient,
-		TelegramClient: *b,
-		Categories:     categories,
-		Schedules:      map[string]time.Time{},
+		NotionClient: *notionClient,
+		NewsClient:   newsClient,
+		Schedules:    map[string]time.Time{},
 
 		NewsMu:  sync.Mutex{},
 		NewsMap: make(map[string]cron.EntryID),
@@ -139,7 +121,25 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 	}
 
 	bot.loadHelpMessage()
+
+	client, err := ent.SetupAndConnectDatabase(databaseUrl)
+	fmt.Println(client)
+	if err != nil {
+		log.Printf("[ent.SetupAndConnectDatabase]: error in db setup or connection: %v", err.Error())
+	}
 	bot.SetUserRepo(repositories.NewUserRepo(client), nil)
+
+	b, err := bt.NewBot(bot_config)
+	if err != nil {
+		return nil, nil, err
+	}
+	bot.SetTelegramClient(*b)
+
+	categories, err := parser.ParseCategories(CATEGORIES_ASSET)
+	if err != nil {
+		return nil, nil, err
+	}
+	bot.SetCategories(categories)
 
 	// setup the cron
 	// recovery crons from database
@@ -178,6 +178,10 @@ func (b *Bot) Start(ctx context.Context) {
 
 func (b *Bot) GetHelpMessage() string {
 	return b.helpMessage
+}
+
+func (b *Bot) SetCategories(categories []string) {
+	b.Categories = categories
 }
 
 func (b *Bot) GetCategories() []string {
@@ -297,6 +301,13 @@ func (b *Bot) setCron(ctx context.Context, up *objs.Update, schedulerType string
 	// the human readable format is with times[0] (hours) first
 	msg.WriteString(fmt.Sprintf("Crontab for your pill `%s`", crontab))
 	return msg, nil
+}
+
+func (b *Bot) SetTelegramClient(bot bt.Bot) {
+	b.TelegramClient = bot
+}
+func (b *Bot) GetTelegramClient() *bt.Bot {
+	return &b.TelegramClient
 }
 
 func (b *Bot) recoverCrontabs(ctx context.Context, schedulerType string) error {

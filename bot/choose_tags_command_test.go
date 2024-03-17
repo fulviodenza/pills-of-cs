@@ -18,29 +18,6 @@ import (
 )
 
 func TestChooseTagsCommand_Execute(t *testing.T) {
-	update := func(opts ...func(*objects.Update)) *objects.Update {
-		update := &objects.Update{
-			Message: &objects.Message{
-				Chat: &objects.Chat{
-					Id: 1,
-				},
-			},
-		}
-		for _, o := range opts {
-			o(update)
-		}
-
-		return update
-	}
-	withMessage := func(msg string) func(*objects.Update) {
-		return func(up *objects.Update) {
-			up.Message.Text = msg
-		}
-	}
-
-	bot := func() *MockBot {
-		return NewMockBot()
-	}
 	type fields struct {
 		Bot *MockBot
 		err error
@@ -113,7 +90,9 @@ func TestChooseTagsCommand_Execute(t *testing.T) {
 			}
 
 			ch := make(chan interface{}, 10)
-			userRepo := adapters.NewMockUserRepo(ch, tt.fields.err)
+			defer close(ch)
+
+			userRepo := adapters.NewMockUserRepo(ch, tt.fields.err, nil)
 			cc.Bot.SetUserRepo(userRepo, ch)
 
 			cc.Execute(context.TODO(), tt.args.update)

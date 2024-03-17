@@ -13,8 +13,10 @@ import (
 
 var _ types.ICommand = (*GetSubscribedTagsCommand)(nil)
 
+const NOT_SUBSCRIBED_MSG = "You are not subscribed to any tag!\nSubscribe one with /choose_tags [tag] command!"
+
 type GetSubscribedTagsCommand struct {
-	Bot *Bot
+	Bot types.IBot
 }
 
 func NewGetSubscribedTagsCommand(bot *Bot) types.Command {
@@ -24,16 +26,16 @@ func NewGetSubscribedTagsCommand(bot *Bot) types.Command {
 	return hc.Execute
 }
 
-// Execute method to process the GetSubscribedTags command.
 func (gc *GetSubscribedTagsCommand) Execute(ctx context.Context, update *objects.Update) {
 	var msg strings.Builder
-	tags, err := gc.Bot.UserRepo.GetTagsByUserId(ctx, strconv.Itoa(update.Message.Chat.Id))
+	tags, err := gc.Bot.GetUserRepo().GetTagsByUserId(ctx, strconv.Itoa(update.Message.Chat.Id))
 	if err != nil {
 		log.Printf("[getSubscribedTags]: failed getting tags by user id: %v", err.Error())
 	}
 	msg.WriteString(utils.AggregateTags(tags))
-	if len(tags) == 0 {
-		msg.WriteString("You are not subscribed to any tag!\nSubscribe one with /choose_tags [tag] command!")
+
+	if len(tags) == 0 || err != nil {
+		msg.WriteString(NOT_SUBSCRIBED_MSG)
 	}
 
 	gc.Bot.SendMessage(msg.String(), update, false)

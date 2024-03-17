@@ -11,8 +11,10 @@ import (
 
 var _ types.ICommand = (*GetTagsCommand)(nil)
 
+const EMPTY_CATEGORIES = "empty categories"
+
 type GetTagsCommand struct {
-	Bot *Bot
+	Bot types.IBot
 }
 
 func NewGetTagsCommand(bot *Bot) types.Command {
@@ -27,7 +29,7 @@ func (gc *GetTagsCommand) Execute(ctx context.Context, update *objects.Update) {
 
 	categories := gc.Bot.GetCategories()
 	if len(categories) == 0 {
-		msg.WriteString("empty categories")
+		msg.WriteString(EMPTY_CATEGORIES)
 	} else {
 		for _, v := range categories {
 			msg.WriteString(fmt.Sprintf("- %s\n", v))

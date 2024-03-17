@@ -3,6 +3,7 @@ package types
 import (
 	"context"
 
+	bt "github.com/SakoDroid/telego/v2"
 	objs "github.com/SakoDroid/telego/v2/objects"
 	"github.com/jomei/notionapi"
 	adapters "github.com/pills-of-cs/adapters/repositories"
@@ -33,6 +34,11 @@ type IBot interface {
 	SendMessage(msg string, up *objs.Update, formatMarkdown bool) error
 	GetHelpMessage() string
 	GetCategories() []string
+	SetCategories([]string)
 	SetUserRepo(adapters.IUserRepo, chan interface{})
 	GetUserRepo() adapters.IUserRepo
+	SetTelegramClient(bot bt.Bot)
+	GetTelegramClient() *bt.Bot
+	// SetNewsClient
+	// GetNewsClient
 }
