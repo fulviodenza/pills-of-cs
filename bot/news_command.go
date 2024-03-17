@@ -26,7 +26,7 @@ type NewsCommand struct {
 }
 
 func NewNewsCommand(bot *Bot) types.Command {
-	hc := HelpCommand{
+	hc := NewsCommand{
 		Bot: bot,
 	}
 	return hc.Execute

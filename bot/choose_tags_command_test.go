@@ -82,7 +82,6 @@ func TestChooseTagsCommand_Execute(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var buf bytes.Buffer
-			// Set the log output to the buffer
 			log.SetOutput(&buf)
 
 			cc := &ChooseTagsCommand{

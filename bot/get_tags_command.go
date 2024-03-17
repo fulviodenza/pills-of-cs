@@ -18,7 +18,7 @@ type GetTagsCommand struct {
 }
 
 func NewGetTagsCommand(bot *Bot) types.Command {
-	hc := HelpCommand{
+	hc := GetTagsCommand{
 		Bot: bot,
 	}
 	return hc.Execute

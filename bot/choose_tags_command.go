@@ -19,7 +19,7 @@ type ChooseTagsCommand struct {
 }
 
 func NewChooseTagsCommand(bot *Bot) types.Command {
-	hc := HelpCommand{
+	hc := ChooseTagsCommand{
 		Bot: bot,
 	}
 	return hc.Execute

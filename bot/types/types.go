@@ -30,6 +30,7 @@ type ICommand interface {
 	Execute(ctx context.Context, update *objs.Update)
 }
 
+// Getters and Setters methods Bot instances
 type IBot interface {
 	Start(ctx context.Context)
 	SendMessage(msg string, up *objs.Update, formatMarkdown bool) error
