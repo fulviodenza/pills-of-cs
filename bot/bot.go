@@ -44,6 +44,7 @@ const (
 	COMMAND_PILL                = "/pill"
 	COMMAND_HELP                = "/help"
 	COMMAND_CHOOSE_TAGS         = "/choose_tags"
+	COMMAND_REMOVE_TAGS         = "/remove_tags"
 	COMMAND_GET_SUBSCRIBED_TAGS = "/get_subscribed_tags"
 	COMMAND_SCHEDULE_PILL       = "/schedule_pill"
 	COMMAND_GET_TAGS            = "/get_tags"
@@ -391,6 +392,7 @@ func (b *Bot) initializeHandlers() map[string]func(ctx context.Context, up *objs
 	return map[string]func(ctx context.Context, up *objs.Update){
 		COMMAND_GET_TAGS:            NewGetTagsCommand(b),
 		COMMAND_PILL:                NewPillCommand(b),
+		COMMAND_REMOVE_TAGS:         NewRemoveCommand(b),
 		COMMAND_HELP:                NewHelpCommand(b),
 		COMMAND_CHOOSE_TAGS:         NewChooseTagsCommand(b),
 		COMMAND_GET_SUBSCRIBED_TAGS: NewGetSubscribedTagsCommand(b),
