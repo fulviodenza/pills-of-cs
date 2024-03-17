@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+const MAX_LEN_MESSAGE = 4096
+
 func MakeTimestamp(len int) int64 {
 	rand.Seed(time.Now().Unix())
 	return (time.Now().UnixNano() / int64(time.Millisecond)) % int64(len)
@@ -60,4 +62,17 @@ func ValidateTime(times []string, tz string) bool {
 	}
 
 	return true
+}
+
+func SplitString(s string) []string {
+	if len(s) <= 0 {
+		return nil
+	}
+
+	maxGroupLen := MAX_LEN_MESSAGE - 1
+	if len(s) < maxGroupLen {
+		maxGroupLen = len(s)
+	}
+	group := s[:maxGroupLen]
+	return append([]string{group}, SplitString(s[maxGroupLen:])...)
 }
