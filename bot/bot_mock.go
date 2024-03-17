@@ -5,6 +5,7 @@ import (
 
 	bt "github.com/SakoDroid/telego/v2"
 	"github.com/SakoDroid/telego/v2/objects"
+	"github.com/pills-of-cs/adapters/news"
 	repositories "github.com/pills-of-cs/adapters/repositories"
 	"github.com/pills-of-cs/bot/types"
 )
@@ -13,6 +14,7 @@ var _ types.IBot = (*MockBot)(nil)
 
 type MockBot struct {
 	repositories.IUserRepo
+	news.INews
 	Resp       string
 	Err        error
 	categories []string
@@ -57,6 +59,12 @@ func (b *MockBot) SetTelegramClient(bot bt.Bot) {}
 func (b *MockBot) GetTelegramClient() *bt.Bot {
 	return nil
 }
+
+func (b *MockBot) SetNewsClient(news news.INews) {
+	b.INews = news
+}
+
+func (b *MockBot) GetNewsClient() news.INews { return b.INews }
 
 var (
 	update = func(opts ...func(*objects.Update)) *objects.Update {

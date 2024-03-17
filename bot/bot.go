@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/pills-of-cs/adapters/ent"
+	"github.com/pills-of-cs/adapters/news"
 	repositories "github.com/pills-of-cs/adapters/repositories"
 	"github.com/pills-of-cs/parser"
 
@@ -62,7 +63,7 @@ const (
 type Bot struct {
 	TelegramClient bt.Bot
 	NotionClient   notionapi.Client
-	NewsClient     *newsapi.Client
+	NewsClient     news.INews
 	UserRepo       repositories.IUserRepo
 
 	helpMessage string
@@ -105,11 +106,8 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 
 	notionClient := notionapi.NewClient(notionapi.Token(notionToken))
 
-	newsClient := newsapi.NewClient(newsToken, newsapi.WithHTTPClient(http.DefaultClient), newsapi.WithUserAgent("pills-of-cs"))
-
 	bot := &Bot{
 		NotionClient: *notionClient,
-		NewsClient:   newsClient,
 		Schedules:    map[string]time.Time{},
 
 		NewsMu:  sync.Mutex{},
@@ -120,6 +118,10 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 	}
 
 	bot.loadHelpMessage()
+
+	newsClient := newsapi.NewClient(newsToken, newsapi.WithHTTPClient(http.DefaultClient), newsapi.WithUserAgent("pills-of-cs"))
+	newsAdapter := news.NewNewsAdapter(*newsClient)
+	bot.SetNewsClient(newsAdapter)
 
 	client, err := ent.SetupAndConnectDatabase(databaseUrl)
 	fmt.Println(client)
@@ -308,6 +310,9 @@ func (b *Bot) SetTelegramClient(bot bt.Bot) {
 func (b *Bot) GetTelegramClient() *bt.Bot {
 	return &b.TelegramClient
 }
+
+func (b *Bot) SetNewsClient(newsClient news.INews) { b.NewsClient = newsClient }
+func (b *Bot) GetNewsClient() news.INews           { return b.NewsClient }
 
 func (b *Bot) recoverCrontabs(ctx context.Context, schedulerType string) error {
 	s := cron.New()
