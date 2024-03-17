@@ -12,7 +12,8 @@ Commands available for this bot, for now are:
 - `/start`: to start the bot;
 - `/pill`: to get a pill from my notebook;
 - `/get_tags`: to get available tags to subscribe to;
-- `/choose_tag [tag1] [tag2] [...]`: to get subscribed to a specific tag;
+- `/choose_tags [tag1] [tag2] [...]`: to get subscribed to a specific tag;
+- `/remove_tags [tag1] [tag2] [...]`: to stop getting subscribed to a specific tag;
 - `/schedule_pill [HH:MM] [Timezone]`: to schedule a pill at a give hour and minute of every day; (e.g. `/schedule_pill 09:00 Europe/Rome`)
 - `/news`: to receive a set of news about your interested topics;
 - `/schedule_news [HH:MM] [Timezone]`: to schedule the receive of a set of news over your interest topics; (e.g. `/schedule_news 09:00 Europe/Rome`)

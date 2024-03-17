@@ -41,7 +41,7 @@ func (hc *RemoveCommand) Execute(ctx context.Context, update *objects.Update) {
 	}
 
 	if len(newTags) > 0 {
-		msg.WriteString("Tags updated:")
+		msg.WriteString("Tags updated:\n")
 		for _, v := range newTags {
 			msg.WriteString(fmt.Sprintf("- %s\n", v))
 		}
