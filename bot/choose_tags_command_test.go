@@ -36,7 +36,7 @@ func TestChooseTagsCommand_Execute(t *testing.T) {
 		{
 			"update tags",
 			fields{
-				bot(),
+				bot(withCategories([]string{"test"})),
 				nil,
 			},
 			args{
@@ -51,7 +51,7 @@ func TestChooseTagsCommand_Execute(t *testing.T) {
 		{
 			"update tags with underscore",
 			fields{
-				bot(),
+				bot(withCategories([]string{"test underscore"})),
 				nil,
 			},
 			args{
@@ -66,7 +66,7 @@ func TestChooseTagsCommand_Execute(t *testing.T) {
 		{
 			"error updating tags",
 			fields{
-				bot(),
+				bot(withCategories([]string{"test underscore"})),
 				errors.New("error updating tags"),
 			},
 			args{
@@ -77,6 +77,21 @@ func TestChooseTagsCommand_Execute(t *testing.T) {
 			"",
 			nil,
 			"failed adding tag to user: error updating tags",
+		},
+		{
+			"fail tag validation",
+			fields{
+				bot(withCategories([]string{"test"})),
+				errors.New("error updating tags"),
+			},
+			args{
+				update: update(
+					withMessage("test-non-existing"),
+				),
+			},
+			NO_VALID_TAGS,
+			nil,
+			"",
 		},
 	}
 	for _, tt := range tests {
@@ -110,7 +125,8 @@ func TestChooseTagsCommand_Execute(t *testing.T) {
 			if tt.fields.err == nil {
 				select {
 				case res := <-ch:
-					r := res.([]string)
+					r := []string{}
+					r = res.([]string)
 					less := func(x, y interface{}) bool {
 						b1, _ := json.Marshal(r)
 						b2, _ := json.Marshal(tt.wantSavedTags)

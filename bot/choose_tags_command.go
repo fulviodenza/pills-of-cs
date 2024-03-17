@@ -12,7 +12,10 @@ import (
 
 var _ types.ICommand = (*ChooseTagsCommand)(nil)
 
-const TAGS_UPDATED = "tags updated"
+const (
+	TAGS_UPDATED  = "tags updated"
+	NO_VALID_TAGS = "no valid tags found"
+)
 
 type ChooseTagsCommand struct {
 	Bot types.IBot
@@ -40,11 +43,31 @@ func (cc *ChooseTagsCommand) Execute(ctx context.Context, update *objects.Update
 		}
 	}
 
-	err := cc.Bot.GetUserRepo().AddTagsToUser(ctx, strconv.Itoa(update.Message.Chat.Id), args)
+	validatedArgs := make([]string, 0)
+	for _, a := range args {
+		if contains(a, cc.Bot.GetCategories()) {
+			validatedArgs = append(validatedArgs, a)
+		}
+	}
+
+	if len(validatedArgs) == 0 {
+		cc.Bot.SendMessage(NO_VALID_TAGS, update, false)
+	}
+
+	err := cc.Bot.GetUserRepo().AddTagsToUser(ctx, strconv.Itoa(update.Message.Chat.Id), validatedArgs)
 	if err != nil {
 		log.Printf("[ChooseTags]: failed adding tag to user: %v", err.Error())
 		return
 	}
 
 	cc.Bot.SendMessage(TAGS_UPDATED, update, false)
+}
+
+func contains(s string, ss []string) bool {
+	for _, t := range ss {
+		if strings.EqualFold(s, t) {
+			return true
+		}
+	}
+	return false
 }
