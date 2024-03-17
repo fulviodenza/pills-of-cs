@@ -6,6 +6,7 @@ import (
 	bt "github.com/SakoDroid/telego/v2"
 	objs "github.com/SakoDroid/telego/v2/objects"
 	"github.com/jomei/notionapi"
+	"github.com/pills-of-cs/adapters/news"
 	adapters "github.com/pills-of-cs/adapters/repositories"
 )
 
@@ -39,6 +40,6 @@ type IBot interface {
 	GetUserRepo() adapters.IUserRepo
 	SetTelegramClient(bot bt.Bot)
 	GetTelegramClient() *bt.Bot
-	// SetNewsClient
-	// GetNewsClient
+	SetNewsClient(news.INews)
+	GetNewsClient() news.INews
 }

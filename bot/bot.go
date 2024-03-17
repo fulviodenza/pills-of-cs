@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/pills-of-cs/adapters/ent"
+	"github.com/pills-of-cs/adapters/news"
 	repositories "github.com/pills-of-cs/adapters/repositories"
 	"github.com/pills-of-cs/parser"
 
@@ -40,18 +41,17 @@ const (
 )
 
 const (
-	COMMAND_START                     = "/start"
-	COMMAND_PILL                      = "/pill"
-	COMMAND_HELP                      = "/help"
-	COMMAND_CHOOSE_TAGS               = "/choose_tags"
-	COMMAND_GET_SUBSCRIBED_CATEGORIES = "/get_subscribed_categories"
-	COMMAND_SCHEDULE_PILL             = "/schedule_pill"
-	COMMAND_GET_TAGS                  = "/get_tags"
-	COMMAND_NEWS                      = "/news"
-	COMMAND_SCHEDULE_NEWS             = "/schedule_news"
-	COMMAND_UNSCHEDULE_NEWS           = "/unschedule_news"
-	COMMAND_UNSCHEDULE_PILL           = "/unschedule_pill"
-	COMMAND_QUIZ                      = "/quiz"
+	COMMAND_PILL                = "/pill"
+	COMMAND_HELP                = "/help"
+	COMMAND_CHOOSE_TAGS         = "/choose_tags"
+	COMMAND_GET_SUBSCRIBED_TAGS = "/get_subscribed_tags"
+	COMMAND_SCHEDULE_PILL       = "/schedule_pill"
+	COMMAND_GET_TAGS            = "/get_tags"
+	COMMAND_NEWS                = "/news"
+	COMMAND_SCHEDULE_NEWS       = "/schedule_news"
+	COMMAND_UNSCHEDULE_NEWS     = "/unschedule_news"
+	COMMAND_UNSCHEDULE_PILL     = "/unschedule_pill"
+	COMMAND_QUIZ                = "/quiz"
 )
 
 const (
@@ -63,7 +63,7 @@ const (
 type Bot struct {
 	TelegramClient bt.Bot
 	NotionClient   notionapi.Client
-	NewsClient     *newsapi.Client
+	NewsClient     news.INews
 	UserRepo       repositories.IUserRepo
 
 	helpMessage string
@@ -106,11 +106,8 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 
 	notionClient := notionapi.NewClient(notionapi.Token(notionToken))
 
-	newsClient := newsapi.NewClient(newsToken, newsapi.WithHTTPClient(http.DefaultClient), newsapi.WithUserAgent("pills-of-cs"))
-
 	bot := &Bot{
 		NotionClient: *notionClient,
-		NewsClient:   newsClient,
 		Schedules:    map[string]time.Time{},
 
 		NewsMu:  sync.Mutex{},
@@ -121,6 +118,10 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 	}
 
 	bot.loadHelpMessage()
+
+	newsClient := newsapi.NewClient(newsToken, newsapi.WithHTTPClient(http.DefaultClient), newsapi.WithUserAgent("pills-of-cs"))
+	newsAdapter := news.NewNewsAdapter(*newsClient)
+	bot.SetNewsClient(newsAdapter)
 
 	client, err := ent.SetupAndConnectDatabase(databaseUrl)
 	fmt.Println(client)
@@ -310,6 +311,9 @@ func (b *Bot) GetTelegramClient() *bt.Bot {
 	return &b.TelegramClient
 }
 
+func (b *Bot) SetNewsClient(newsClient news.INews) { b.NewsClient = newsClient }
+func (b *Bot) GetNewsClient() news.INews           { return b.NewsClient }
+
 func (b *Bot) recoverCrontabs(ctx context.Context, schedulerType string) error {
 	s := cron.New()
 	crontabs := map[string]string{}
@@ -385,17 +389,16 @@ func (b *Bot) recoverCrontabs(ctx context.Context, schedulerType string) error {
 
 func (b *Bot) initializeHandlers() map[string]func(ctx context.Context, up *objs.Update) {
 	return map[string]func(ctx context.Context, up *objs.Update){
-		COMMAND_GET_TAGS:                  NewGetTagsCommand(b),
-		COMMAND_START:                     NewRunCommand(b),
-		COMMAND_PILL:                      NewPillCommand(b),
-		COMMAND_HELP:                      NewHelpCommand(b),
-		COMMAND_CHOOSE_TAGS:               NewChooseTagsCommand(b),
-		COMMAND_GET_SUBSCRIBED_CATEGORIES: NewGetSubscribedTagsCommand(b),
-		COMMAND_SCHEDULE_PILL:             NewSchedulePillCommand(b),
-		COMMAND_NEWS:                      NewNewsCommand(b),
-		COMMAND_SCHEDULE_NEWS:             NewScheduleNewsCommand(b),
-		COMMAND_UNSCHEDULE_NEWS:           NewUnscheduleNewsCommand(b),
-		COMMAND_UNSCHEDULE_PILL:           NewUnschedulePillCommand(b),
-		COMMAND_QUIZ:                      NewQuizCommand(b),
+		COMMAND_GET_TAGS:            NewGetTagsCommand(b),
+		COMMAND_PILL:                NewPillCommand(b),
+		COMMAND_HELP:                NewHelpCommand(b),
+		COMMAND_CHOOSE_TAGS:         NewChooseTagsCommand(b),
+		COMMAND_GET_SUBSCRIBED_TAGS: NewGetSubscribedTagsCommand(b),
+		COMMAND_SCHEDULE_PILL:       NewSchedulePillCommand(b),
+		COMMAND_NEWS:                NewNewsCommand(b),
+		COMMAND_SCHEDULE_NEWS:       NewScheduleNewsCommand(b),
+		COMMAND_UNSCHEDULE_NEWS:     NewUnscheduleNewsCommand(b),
+		COMMAND_UNSCHEDULE_PILL:     NewUnschedulePillCommand(b),
+		COMMAND_QUIZ:                NewQuizCommand(b),
 	}
 }

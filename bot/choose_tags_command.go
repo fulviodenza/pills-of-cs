@@ -12,6 +12,8 @@ import (
 
 var _ types.ICommand = (*ChooseTagsCommand)(nil)
 
+const TAGS_UPDATED = "tags updated"
+
 type ChooseTagsCommand struct {
 	Bot types.IBot
 }
@@ -44,5 +46,5 @@ func (cc *ChooseTagsCommand) Execute(ctx context.Context, update *objects.Update
 		return
 	}
 
-	cc.Bot.SendMessage("tags updated", update, false)
+	cc.Bot.SendMessage(TAGS_UPDATED, update, false)
 }
