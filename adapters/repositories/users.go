@@ -9,12 +9,28 @@ import (
 	"github.com/pills-of-cs/adapters/ent/user"
 )
 
+var _ IUserRepo = (*UserRepo)(nil)
+
+type IUserRepo interface {
+	AddTagsToUser(ctx context.Context, id string, topics []string) error
+	RemovePillSchedule(ctx context.Context, id string) error
+	RemoveNewsSchedule(ctx context.Context, id string) error
+	SavePillSchedule(ctx context.Context, id string, pillSchedule string) error
+	GetTagsByUserId(ctx context.Context, id string) ([]string, error)
+	GetAllPillCrontabs(ctx context.Context) (map[string]string, error)
+	GetAllNewsCrontabs(ctx context.Context) (map[string]string, error)
+	SaveNewsSchedule(ctx context.Context, id string, news_schedule string) error
+}
+
 type UserRepo struct {
 	*ent.Client
 }
 
-func (ur *UserRepo) AddTagsToUser(ctx context.Context, id string, topics []string) error {
+func NewUserRepo(client *ent.Client) *UserRepo {
+	return &UserRepo{Client: client}
+}
 
+func (ur *UserRepo) AddTagsToUser(ctx context.Context, id string, topics []string) error {
 	userEl, err := ur.User.Query().
 		Where(user.IDEQ(id)).
 		First(ctx)
