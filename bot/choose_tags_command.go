@@ -43,19 +43,24 @@ func (cc *ChooseTagsCommand) Execute(ctx context.Context, update *objects.Update
 		}
 	}
 
+	tags, err := cc.Bot.GetUserRepo().GetTagsByUserId(ctx, strconv.Itoa(update.Message.Chat.Id))
+	if err != nil {
+		log.Printf("[ChooseTags]: failed getting tag by user: %v", err.Error())
+	}
+
 	validatedArgs := make([]string, 0)
 	for _, a := range args {
-		if contains(a, cc.Bot.GetCategories()) {
+		if contains(a, cc.Bot.GetCategories()) && !contains(a, tags) {
 			validatedArgs = append(validatedArgs, a)
 		}
 	}
 
 	if len(validatedArgs) == 0 {
 		cc.Bot.SendMessage(NO_VALID_TAGS, update, false)
+		return
 	}
 
-	err := cc.Bot.GetUserRepo().AddTagsToUser(ctx, strconv.Itoa(update.Message.Chat.Id), validatedArgs)
-	if err != nil {
+	if err = cc.Bot.GetUserRepo().AddTagsToUser(ctx, strconv.Itoa(update.Message.Chat.Id), validatedArgs); err != nil {
 		log.Printf("[ChooseTags]: failed adding tag to user: %v", err.Error())
 		return
 	}
