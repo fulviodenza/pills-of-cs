@@ -27,7 +27,6 @@ func NewQuizCommand(bot *Bot) types.Command {
 	return hc.Execute
 }
 
-// Execute method to process the help command.
 func (qc *QuizCommand) Execute(ctx context.Context, update *objects.Update) {
 	var optionsAnswer []string
 	var options []string

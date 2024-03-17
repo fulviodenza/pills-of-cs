@@ -11,7 +11,7 @@ import (
 var _ types.ICommand = (*RunCommand)(nil)
 
 type RunCommand struct {
-	Bot *Bot
+	Bot types.IBot
 }
 
 func NewRunCommand(bot *Bot) types.Command {
@@ -21,7 +21,6 @@ func NewRunCommand(bot *Bot) types.Command {
 	return rc.Execute
 }
 
-// Execute method to process the help command.
 func (rc *RunCommand) Execute(ctx context.Context, update *objects.Update) {
 	err := rc.Bot.SendMessage("Welcome to the pills-of-cs bot! Press `/pill` to request a pill or `/help` to get informations about the bot", update, true)
 	if err != nil {
