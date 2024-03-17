@@ -40,18 +40,17 @@ const (
 )
 
 const (
-	COMMAND_START                     = "/start"
-	COMMAND_PILL                      = "/pill"
-	COMMAND_HELP                      = "/help"
-	COMMAND_CHOOSE_TAGS               = "/choose_tags"
-	COMMAND_GET_SUBSCRIBED_CATEGORIES = "/get_subscribed_categories"
-	COMMAND_SCHEDULE_PILL             = "/schedule_pill"
-	COMMAND_GET_TAGS                  = "/get_tags"
-	COMMAND_NEWS                      = "/news"
-	COMMAND_SCHEDULE_NEWS             = "/schedule_news"
-	COMMAND_UNSCHEDULE_NEWS           = "/unschedule_news"
-	COMMAND_UNSCHEDULE_PILL           = "/unschedule_pill"
-	COMMAND_QUIZ                      = "/quiz"
+	COMMAND_PILL                = "/pill"
+	COMMAND_HELP                = "/help"
+	COMMAND_CHOOSE_TAGS         = "/choose_tags"
+	COMMAND_GET_SUBSCRIBED_TAGS = "/get_subscribed_tags"
+	COMMAND_SCHEDULE_PILL       = "/schedule_pill"
+	COMMAND_GET_TAGS            = "/get_tags"
+	COMMAND_NEWS                = "/news"
+	COMMAND_SCHEDULE_NEWS       = "/schedule_news"
+	COMMAND_UNSCHEDULE_NEWS     = "/unschedule_news"
+	COMMAND_UNSCHEDULE_PILL     = "/unschedule_pill"
+	COMMAND_QUIZ                = "/quiz"
 )
 
 const (
@@ -385,17 +384,16 @@ func (b *Bot) recoverCrontabs(ctx context.Context, schedulerType string) error {
 
 func (b *Bot) initializeHandlers() map[string]func(ctx context.Context, up *objs.Update) {
 	return map[string]func(ctx context.Context, up *objs.Update){
-		COMMAND_GET_TAGS:                  NewGetTagsCommand(b),
-		COMMAND_START:                     NewRunCommand(b),
-		COMMAND_PILL:                      NewPillCommand(b),
-		COMMAND_HELP:                      NewHelpCommand(b),
-		COMMAND_CHOOSE_TAGS:               NewChooseTagsCommand(b),
-		COMMAND_GET_SUBSCRIBED_CATEGORIES: NewGetSubscribedTagsCommand(b),
-		COMMAND_SCHEDULE_PILL:             NewSchedulePillCommand(b),
-		COMMAND_NEWS:                      NewNewsCommand(b),
-		COMMAND_SCHEDULE_NEWS:             NewScheduleNewsCommand(b),
-		COMMAND_UNSCHEDULE_NEWS:           NewUnscheduleNewsCommand(b),
-		COMMAND_UNSCHEDULE_PILL:           NewUnschedulePillCommand(b),
-		COMMAND_QUIZ:                      NewQuizCommand(b),
+		COMMAND_GET_TAGS:            NewGetTagsCommand(b),
+		COMMAND_PILL:                NewPillCommand(b),
+		COMMAND_HELP:                NewHelpCommand(b),
+		COMMAND_CHOOSE_TAGS:         NewChooseTagsCommand(b),
+		COMMAND_GET_SUBSCRIBED_TAGS: NewGetSubscribedTagsCommand(b),
+		COMMAND_SCHEDULE_PILL:       NewSchedulePillCommand(b),
+		COMMAND_NEWS:                NewNewsCommand(b),
+		COMMAND_SCHEDULE_NEWS:       NewScheduleNewsCommand(b),
+		COMMAND_UNSCHEDULE_NEWS:     NewUnscheduleNewsCommand(b),
+		COMMAND_UNSCHEDULE_PILL:     NewUnschedulePillCommand(b),
+		COMMAND_QUIZ:                NewQuizCommand(b),
 	}
 }
