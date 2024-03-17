@@ -12,19 +12,21 @@ import (
 	"time"
 
 	"github.com/pills-of-cs/adapters/ent"
+	"github.com/pills-of-cs/adapters/news"
 	repositories "github.com/pills-of-cs/adapters/repositories"
 	"github.com/pills-of-cs/parser"
 
-	bt "github.com/SakoDroid/telego"
-	cfg "github.com/SakoDroid/telego/configs"
-	"github.com/SakoDroid/telego/objects"
-	objs "github.com/SakoDroid/telego/objects"
+	"github.com/pills-of-cs/bot/types"
+	"github.com/pills-of-cs/utils"
+
+	bt "github.com/SakoDroid/telego/v2"
+	cfg "github.com/SakoDroid/telego/v2/configs"
+	objs "github.com/SakoDroid/telego/v2/objects"
 	"github.com/barthr/newsapi"
 	"github.com/jomei/notionapi"
 	"github.com/robfig/cron/v3"
 )
 
-// APIs constants
 const (
 	NOTION_TOKEN       = "NOTION_TOKEN"
 	NOTION_DATABASE_ID = "NOTION_DATABASE_ID"
@@ -39,18 +41,17 @@ const (
 )
 
 const (
-	COMMAND_START                     = "/start"
-	COMMAND_PILL                      = "/pill"
-	COMMAND_HELP                      = "/help"
-	COMMAND_CHOOSE_TAGS               = "/choose_tags"
-	COMMAND_GET_SUBSCRIBED_CATEGORIES = "/get_subscribed_categories"
-	COMMAND_SCHEDULE_PILL             = "/schedule_pill"
-	COMMAND_GET_TAGS                  = "/get_tags"
-	COMMAND_NEWS                      = "/news"
-	COMMAND_SCHEDULE_NEWS             = "/schedule_news"
-	COMMAND_UNSCHEDULE_NEWS           = "/unschedule_news"
-	COMMAND_UNSCHEDULE_PILL           = "/unschedule_pill"
-	COMMAND_QUIZ                      = "/quiz"
+	COMMAND_PILL                = "/pill"
+	COMMAND_HELP                = "/help"
+	COMMAND_CHOOSE_TAGS         = "/choose_tags"
+	COMMAND_GET_SUBSCRIBED_TAGS = "/get_subscribed_tags"
+	COMMAND_SCHEDULE_PILL       = "/schedule_pill"
+	COMMAND_GET_TAGS            = "/get_tags"
+	COMMAND_NEWS                = "/news"
+	COMMAND_SCHEDULE_NEWS       = "/schedule_news"
+	COMMAND_UNSCHEDULE_NEWS     = "/unschedule_news"
+	COMMAND_UNSCHEDULE_PILL     = "/unschedule_pill"
+	COMMAND_QUIZ                = "/quiz"
 )
 
 const (
@@ -62,12 +63,12 @@ const (
 type Bot struct {
 	TelegramClient bt.Bot
 	NotionClient   notionapi.Client
-	NewsClient     *newsapi.Client
+	NewsClient     news.INews
+	UserRepo       repositories.IUserRepo
 
-	HelpMessage string
+	helpMessage string
 	Categories  []string
 
-	UserRepo  repositories.UserRepo
 	Schedules map[string]time.Time
 
 	PillScheduler *cron.Cron
@@ -79,13 +80,9 @@ type Bot struct {
 	NewsMap       map[string]cron.EntryID
 }
 
-type IBot interface {
-	Start(ctx context.Context)
-}
-
 // this cast force us to follow the given interface
 // if the interface will not be followed, this will not compile
-var _ IBot = (*Bot)(nil)
+var _ types.IBot = (*Bot)(nil)
 
 // get variables from env
 var (
@@ -99,18 +96,6 @@ var (
 func NewBotWithConfig() (*Bot, *ent.Client, error) {
 	ctx := context.Background()
 
-	helpMessage := make([]byte, 0)
-	if err := parser.Read(HELP_MESSAGE_ASSET, &helpMessage); err != nil {
-		return nil, nil, err
-	}
-
-	// connect to database with the env db uri
-	client, err := ent.SetupAndConnectDatabase(databaseUrl)
-	fmt.Println(client)
-	if err != nil {
-		log.Printf("[ent.SetupAndConnectDatabase]: error in db setup or connection: %v", err.Error())
-	}
-
 	bot_config := &cfg.BotConfigs{
 		BotAPI:         cfg.DefaultBotAPI,
 		APIKey:         telegramToken,
@@ -119,40 +104,11 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 		LogFileAddress: cfg.DefaultLogFile,
 	}
 
-	b, err := bt.NewBot(bot_config)
-	if err != nil {
-		return nil, nil, err
-	}
-	// end telegram configuration
-
-	notion_client := notionapi.NewClient(notionapi.Token(notionToken))
-
-	// set news client
-	newsClient := newsapi.NewClient(newsToken, newsapi.WithHTTPClient(http.DefaultClient), newsapi.WithUserAgent("pills-of-cs"))
-	if err != nil {
-		return nil, nil, err
-	}
-
-	categories, err := parser.ParseCategories(CATEGORIES_ASSET)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	userRepo := repositories.UserRepo{
-		Client: client,
-	}
+	notionClient := notionapi.NewClient(notionapi.Token(notionToken))
 
 	bot := &Bot{
-		// client initialization
-		NotionClient:   *notion_client,
-		NewsClient:     newsClient,
-		TelegramClient: *b,
-		// static assets initialization
-		Categories:  categories,
-		HelpMessage: string(helpMessage),
-		// database initialization
-		UserRepo:  userRepo,
-		Schedules: map[string]time.Time{},
+		NotionClient: *notionClient,
+		Schedules:    map[string]time.Time{},
 
 		NewsMu:  sync.Mutex{},
 		NewsMap: make(map[string]cron.EntryID),
@@ -160,6 +116,31 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 		PillsMu: sync.Mutex{},
 		PillMap: make(map[string]cron.EntryID),
 	}
+
+	bot.loadHelpMessage()
+
+	newsClient := newsapi.NewClient(newsToken, newsapi.WithHTTPClient(http.DefaultClient), newsapi.WithUserAgent("pills-of-cs"))
+	newsAdapter := news.NewNewsAdapter(*newsClient)
+	bot.SetNewsClient(newsAdapter)
+
+	client, err := ent.SetupAndConnectDatabase(databaseUrl)
+	fmt.Println(client)
+	if err != nil {
+		log.Printf("[ent.SetupAndConnectDatabase]: error in db setup or connection: %v", err.Error())
+	}
+	bot.SetUserRepo(repositories.NewUserRepo(client), nil)
+
+	b, err := bt.NewBot(bot_config)
+	if err != nil {
+		return nil, nil, err
+	}
+	bot.SetTelegramClient(*b)
+
+	categories, err := parser.ParseCategories(CATEGORIES_ASSET)
+	if err != nil {
+		return nil, nil, err
+	}
+	bot.SetCategories(categories)
 
 	// setup the cron
 	// recovery crons from database
@@ -175,10 +156,171 @@ func NewBotWithConfig() (*Bot, *ent.Client, error) {
 	return bot, client, err
 }
 
+func (b *Bot) Start(ctx context.Context) {
+	updateCh := b.TelegramClient.GetUpdateChannel()
+	go func() {
+		for {
+			update := <-*updateCh
+			log.Printf("got update: %v\n", update.Update_id)
+		}
+	}()
+
+	var handlers = b.initializeHandlers()
+	for c, f := range handlers {
+		c := c
+		f := f
+		b.TelegramClient.AddHandler(c, func(u *objs.Update) {
+			if strings.Contains(u.Message.Text, c) {
+				f(ctx, u)
+			}
+		}, PRIVATE_CHAT_TYPE, GROUP_CHAT_TYPE, SUPERGROUP_CHAT_TYPE)
+	}
+}
+
+func (b *Bot) GetHelpMessage() string {
+	return b.helpMessage
+}
+
+func (b *Bot) SetCategories(categories []string) {
+	b.Categories = categories
+}
+
+func (b *Bot) GetCategories() []string {
+	return b.Categories
+}
+
+func (b *Bot) SendMessage(msg string, up *objs.Update, formatMarkdown bool) error {
+	parseMode := ""
+	if formatMarkdown {
+		parseMode = "Markdown"
+	}
+
+	if len(msg) >= MAX_LEN_MESSAGE {
+		msgs := utils.SplitString(msg)
+		for _, m := range msgs {
+			_, err := b.TelegramClient.SendMessage(up.Message.Chat.Id, m, parseMode, 0, false, false)
+			if err != nil {
+				log.Printf("[SendMessage]: sending message to user: %v", err.Error())
+				return err
+			}
+		}
+	} else {
+		_, err := b.TelegramClient.SendMessage(up.Message.Chat.Id, msg, parseMode, 0, false, false)
+		if err != nil {
+			log.Printf("[SendMessage]: sending message to user: %v", err.Error())
+			return err
+		}
+	}
+	return nil
+}
+
+func (b *Bot) SetUserRepo(userRepo repositories.IUserRepo, ch chan interface{}) {
+	b.UserRepo = userRepo
+}
+
+func (b *Bot) GetUserRepo() repositories.IUserRepo {
+	return b.UserRepo
+}
+
+func (b *Bot) loadHelpMessage() {
+	helpMessage := make([]byte, 0)
+	err := parser.Read(HELP_MESSAGE_ASSET, &helpMessage)
+	if err != nil {
+		log.Fatalf("Failed to load help message: %v", err)
+	}
+	b.helpMessage = string(helpMessage)
+}
+
+func (b *Bot) setCron(ctx context.Context, up *objs.Update, schedulerType string) (strings.Builder, error) {
+	var (
+		crontab string
+		err     error
+		msg     strings.Builder
+	)
+	id := strconv.Itoa(up.Message.Chat.Id)
+	// args[1] contains the time HH:MM, args[2] contains the timezone
+	args := strings.SplitN(up.Message.Text, " ", -1)
+	if len(args) != 3 {
+		msg.WriteString("Failed parsing provided time")
+	} else {
+		crontab, err = parser.ValidateSchedule(args[1], args[2])
+		if err != nil {
+			msg.WriteString("Failed parsing provided time")
+		}
+	}
+	switch schedulerType {
+	case "pill":
+		err = b.UserRepo.SavePillSchedule(ctx, id, crontab)
+		if err != nil {
+			log.Printf("[SchedulePill]: failed saving time: %v", err.Error())
+			msg.WriteString("failed saving time")
+		}
+	case "news":
+		err = b.UserRepo.SaveNewsSchedule(ctx, id, crontab)
+		if err != nil {
+			log.Printf("[SchedulePill]: failed saving time: %v", err.Error())
+			msg.WriteString("failed saving time")
+		}
+
+	}
+
+	// run the goroutine with the cron
+	go func(ctx context.Context, u *objs.Update) {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Println("[SchedulePill]: Recovering from panic:", r)
+			}
+		}()
+		switch schedulerType {
+		case "pill":
+			uid := strconv.Itoa(up.Message.Chat.Id)
+			cronId, err := b.PillScheduler.AddFunc(crontab, func() {
+				NewPillCommand(b)(ctx, up)
+			})
+			if err != nil {
+				log.Println("[SchedulePill]: got error:", err)
+				return
+			}
+			b.PillsMu.Lock()
+			b.PillMap[uid] = cronId
+			b.PillsMu.Unlock()
+		case "news":
+			uid := strconv.Itoa(up.Message.Chat.Id)
+			cronId, err := b.NewsScheduler.AddFunc(crontab, func() {
+				NewNewsCommand(b)(ctx, up)
+			})
+			if err != nil {
+				log.Println("[ScheduleNews]: got error:", err)
+				return
+			}
+			b.NewsMu.Lock()
+			b.NewsMap[uid] = cronId
+			b.NewsMu.Unlock()
+		}
+	}(ctx, up)
+
+	// the human readable format is with times[0] (hours) first
+	msg.WriteString(fmt.Sprintf("Crontab for your pill `%s`", crontab))
+	return msg, nil
+}
+
+func (b *Bot) SetTelegramClient(bot bt.Bot) {
+	b.TelegramClient = bot
+}
+func (b *Bot) GetTelegramClient() *bt.Bot {
+	return &b.TelegramClient
+}
+
+func (b *Bot) SetNewsClient(newsClient news.INews) { b.NewsClient = newsClient }
+func (b *Bot) GetNewsClient() news.INews           { return b.NewsClient }
+
 func (b *Bot) recoverCrontabs(ctx context.Context, schedulerType string) error {
 	s := cron.New()
 	crontabs := map[string]string{}
 	var err error
+
+	newsCommand := NewNewsCommand(b)
+	pillCommand := NewPillCommand(b)
 
 	switch schedulerType {
 	case "news":
@@ -201,7 +343,7 @@ func (b *Bot) recoverCrontabs(ctx context.Context, schedulerType string) error {
 		cId, err := s.AddFunc(cron, func() {
 			switch schedulerType {
 			case "news":
-				b.News(context.Background(), &objs.Update{
+				newsCommand(ctx, &objs.Update{
 					Message: &objs.Message{
 						Chat: &objs.Chat{
 							Id: userId,
@@ -209,7 +351,7 @@ func (b *Bot) recoverCrontabs(ctx context.Context, schedulerType string) error {
 					},
 				})
 			case "pill":
-				b.Pill(context.Background(), &objs.Update{
+				pillCommand(ctx, &objs.Update{
 					Message: &objs.Message{
 						Chat: &objs.Chat{
 							Id: userId,
@@ -218,6 +360,10 @@ func (b *Bot) recoverCrontabs(ctx context.Context, schedulerType string) error {
 				})
 			}
 		})
+		if err != nil {
+			continue
+		}
+
 		switch schedulerType {
 		case "news":
 			b.NewsMu.Lock()
@@ -241,36 +387,18 @@ func (b *Bot) recoverCrontabs(ctx context.Context, schedulerType string) error {
 	return nil
 }
 
-func (b *Bot) Start(ctx context.Context) {
-	updateCh := b.TelegramClient.GetUpdateChannel()
-	go func() {
-		for {
-			update := <-*updateCh
-			log.Printf("got update: %v\n", update.Update_id)
-		}
-	}()
-
-	var handlers = map[string]func(ctx context.Context, up *objects.Update){
-		COMMAND_GET_TAGS:                  b.GetTags,
-		COMMAND_START:                     b.Run,
-		COMMAND_PILL:                      b.Pill,
-		COMMAND_HELP:                      b.Help,
-		COMMAND_CHOOSE_TAGS:               b.ChooseTags,
-		COMMAND_GET_SUBSCRIBED_CATEGORIES: b.GetSubscribedTags,
-		COMMAND_SCHEDULE_PILL:             b.SchedulePill,
-		COMMAND_NEWS:                      b.News,
-		COMMAND_SCHEDULE_NEWS:             b.ScheduleNews,
-		COMMAND_UNSCHEDULE_NEWS:           b.UnscheduleNews,
-		COMMAND_UNSCHEDULE_PILL:           b.UnschedulePill,
-		COMMAND_QUIZ:                      b.Quiz,
-	}
-	for c, f := range handlers {
-		c := c
-		f := f
-		b.TelegramClient.AddHandler(c, func(u *objs.Update) {
-			if strings.Contains(u.Message.Text, c) {
-				f(ctx, u)
-			}
-		}, PRIVATE_CHAT_TYPE, GROUP_CHAT_TYPE, SUPERGROUP_CHAT_TYPE)
+func (b *Bot) initializeHandlers() map[string]func(ctx context.Context, up *objs.Update) {
+	return map[string]func(ctx context.Context, up *objs.Update){
+		COMMAND_GET_TAGS:            NewGetTagsCommand(b),
+		COMMAND_PILL:                NewPillCommand(b),
+		COMMAND_HELP:                NewHelpCommand(b),
+		COMMAND_CHOOSE_TAGS:         NewChooseTagsCommand(b),
+		COMMAND_GET_SUBSCRIBED_TAGS: NewGetSubscribedTagsCommand(b),
+		COMMAND_SCHEDULE_PILL:       NewSchedulePillCommand(b),
+		COMMAND_NEWS:                NewNewsCommand(b),
+		COMMAND_SCHEDULE_NEWS:       NewScheduleNewsCommand(b),
+		COMMAND_UNSCHEDULE_NEWS:     NewUnscheduleNewsCommand(b),
+		COMMAND_UNSCHEDULE_PILL:     NewUnschedulePillCommand(b),
+		COMMAND_QUIZ:                NewQuizCommand(b),
 	}
 }

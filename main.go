@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	adapters "github.com/pills-of-cs/adapters/repositories"
 	"github.com/pills-of-cs/bot"
 )
 
@@ -21,9 +22,9 @@ func main() {
 	}
 
 	// Create the db and the collection
-	botWithConfig.UserRepo.Client = client
+	botWithConfig.UserRepo = adapters.NewUserRepo(client)
 
-	err = botWithConfig.TelegramClient.Run()
+	err = botWithConfig.TelegramClient.Run(false)
 	if err != nil {
 		log.Fatalf("got error: %v", err)
 	}
